@@ -14,10 +14,6 @@ function generateId() {
     return (globalThis.crypto ?? require("crypto")).randomUUID();
 }
 
-function uniqueStrings(arr: string[]) {
-    return Array.from(new Set(arr.filter(Boolean)));
-}
-
 function isProfileComplete(p: UserProfile): boolean {
     const hasDisplayName = (p.displayName?.trim()?.length ?? 0) > 0;
     const hasAtLeastOnePerson = (p.household?.people?.length ?? 0) > 0;
@@ -37,13 +33,13 @@ function isProfileComplete(p: UserProfile): boolean {
 
 export async function POST(req: NextRequest) {
     try {
-        const { authUserId, text } = (await req.json()) as {
+        const { authUserId, new_info } = (await req.json()) as {
             authUserId?: string;
-            text: string;
+            new_info: string;
         };
 
-        if (!authUserId || !text) {
-            return NextResponse.json({ error: "Missing authUserId or text" }, { status: 400 });
+        if (!authUserId || !new_info) {
+            return NextResponse.json({ error: "Missing authUserId or new_info" }, { status: 400 });
         }
 
         const supabase = await createSupabaseServerClient();
@@ -66,30 +62,51 @@ export async function POST(req: NextRequest) {
             .maybeSingle();
         if (pErr) throw new Error(pErr.message);
 
-        // 2) Extract structured onboarding info from free text
-        const model = new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-4o-mini", temperature: 0 });
+        const prev = (existing as any) as UserProfile | null;
+
+        // 2) Extract and merge new info with existing data using LLM
+        const model = new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini", temperature: 0 });
         const extractor = model.withStructuredOutput(AgentOnboardingInputSchema);
+
+        // Prepare context with existing data
+        const existingData = prev ? {
+            displayName: prev.displayName,
+            household: prev.household,
+            dietaryRestrictions: prev.dietaryRestrictions,
+            favoriteFoods: prev.favoriteFoods,
+            dislikedFoods: prev.dislikedFoods,
+            goals: prev.goals,
+        } : null;
+
+        const systemPrompt = existingData
+            ? `You are updating user onboarding details for a weekly meal planner.
+Current user data: ${JSON.stringify(existingData, null, 2)}
+
+Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new).
+If new info contradicts existing data, prefer the new information.
+If new info adds to existing data (e.g., new favorite foods), merge both.
+Always return ALL fields, not just the updated ones.`
+            : "You extract user onboarding details for a weekly meal planner. Return only the structured fields. If unsure, omit.";
+
         const parsed = await extractor.invoke([
             {
                 role: "system",
-                content:
-                    "You extract user onboarding details for a weekly meal planner. Return only the structured fields. If unsure, omit.",
+                content: systemPrompt,
             },
-            { role: "user", content: text },
+            { role: "user", content: new_info },
         ] as any);
 
-        // 3) Merge
+        // 3) Build final profile from LLM output (LLM already merged everything)
         const nowIso = new Date().toISOString();
 
-        const prev = (existing as any) as UserProfile | null;
-
-        const newPeople: Person[] = (parsed.household?.people ?? []).map((p) => ({
+        // Add IDs to people and pets from LLM response
+        const peopleWithIds: Person[] = (parsed.household?.people ?? []).map((p) => ({
             id: generateId(),
             gender: p.gender ?? undefined,
             estimatedAge: p.estimatedAge ?? undefined,
             role: p.role,
         }));
-        const newPets: Pet[] = (parsed.household?.pets ?? []).map((p) => ({
+        const petsWithIds: Pet[] = (parsed.household?.pets ?? []).map((p) => ({
             id: generateId(),
             animal: p.animal,
             name: p.name ?? null,
@@ -98,34 +115,21 @@ export async function POST(req: NextRequest) {
         const merged: UserProfile = {
             id: prev?.id ?? generateId(),
             authUserId: resolvedAuthUserId!,
-            // Prefer auth identity for display name; fall back to previous or parsed
-            displayName: displayNameFromAuth ?? prev?.displayName ?? parsed.displayName ?? "",
+            displayName: displayNameFromAuth ?? parsed.displayName ?? "",
             locale: prev?.locale,
             timeZone: FIXED_TIME_ZONE,
             location: FIXED_LOCATION,
             household: {
-                people: [...(prev?.household?.people ?? []), ...newPeople],
-                pets: [...(prev?.household?.pets ?? []), ...newPets],
+                people: peopleWithIds,
+                pets: petsWithIds,
             },
-            dietaryRestrictions: uniqueStrings([
-                ...((prev?.dietaryRestrictions as string[]) ?? []),
-                ...((parsed.dietaryRestrictions as string[]) ?? []),
-            ]),
-            favoriteFoods: uniqueStrings([
-                ...((prev?.favoriteFoods as string[]) ?? []),
-                ...((parsed.favoriteFoods as string[]) ?? []),
-            ]),
-            dislikedFoods: uniqueStrings([
-                ...((prev?.dislikedFoods as string[]) ?? []),
-                ...((parsed.dislikedFoods as string[]) ?? []),
-            ]),
-            goals: uniqueStrings([
-                ...((prev?.goals as string[]) ?? []),
-                ...((parsed.goals as string[]) ?? []),
-            ]),
+            dietaryRestrictions: parsed.dietaryRestrictions ?? [],
+            favoriteFoods: parsed.favoriteFoods ?? [],
+            dislikedFoods: parsed.dislikedFoods ?? [],
+            goals: parsed.goals ?? [],
             createdAt: prev?.createdAt ?? nowIso,
             updatedAt: nowIso,
-            rawOnboarding: { ...(prev?.rawOnboarding ?? {}), lastText: text },
+            rawOnboarding: { ...(prev?.rawOnboarding ?? {}), lastNewInfo: new_info },
         };
 
         // 4) Persist (upsert by auth_user_id)
