@@ -210,4 +210,3 @@ function checkOnboardingComplete(data: Partial<AgentOnboardingInput> | null | un
     data.goals.length > 0
   )
 }
-

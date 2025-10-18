@@ -54,20 +54,31 @@ export default function ShoppingListPage() {
 
   return (
     <div className="p-6 md:p-8 overflow-auto">
-      <div className="mb-8">
-        <h1 className="text-3xl font-semibold text-foreground mb-2">Shopping List</h1>
-        <p className="text-muted-foreground mb-6">All ingredients needed for your weekly meal plan</p>
+      <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2">
+          Shopping List
+        </h1>
+        <p className="text-lg text-muted-foreground mb-6">All ingredients needed for your weekly meal plan</p>
 
         <div className="flex flex-wrap gap-3">
-          <Button variant="outline" className="gap-2 bg-transparent">
+          <Button
+            variant="outline"
+            className="gap-2 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all-smooth hover-lift"
+          >
             <Printer className="h-4 w-4" />
             Print List
           </Button>
-          <Button variant="outline" className="gap-2 bg-transparent">
+          <Button
+            variant="outline"
+            className="gap-2 bg-transparent hover:bg-accent/10 hover:text-accent hover:border-accent/40 transition-all-smooth hover-lift"
+          >
             <Share2 className="h-4 w-4" />
             Share
           </Button>
-          <Button variant="outline" className="gap-2 bg-transparent">
+          <Button
+            variant="outline"
+            className="gap-2 bg-transparent hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/40 transition-all-smooth hover-lift"
+          >
             <FileDown className="h-4 w-4" />
             Export to PDF
           </Button>
@@ -75,43 +86,54 @@ export default function ShoppingListPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Object.entries(shoppingData).map(([category, items]) => (
-          <Card key={category} className="border-2">
-            <CardHeader className="bg-emerald-50 border-b">
+        {Object.entries(shoppingData).map(([category, items], categoryIndex) => (
+          <Card
+            key={category}
+            className="border-2 hover:border-accent/40 hover-lift animate-in fade-in slide-in-from-bottom-4 duration-500"
+            style={{ animationDelay: `${categoryIndex * 100}ms` }}
+          >
+            <CardHeader className="bg-gradient-to-r from-accent/10 to-emerald-100/50 border-b border-accent/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg text-emerald-900">{category}</CardTitle>
+                <CardTitle className="text-lg font-bold bg-gradient-to-r from-accent to-emerald-700 bg-clip-text text-transparent">
+                  {category}
+                </CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => markAllInCategory(category)}
-                  className="text-emerald-700 hover:text-emerald-800 hover:bg-emerald-100"
+                  className="text-accent hover:text-emerald-700 hover:bg-accent/10 transition-all-smooth hover-scale"
                 >
-                  Mark all as purchased
+                  Mark all
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="p-4">
               <div className="space-y-3">
-                {items.map((item) => {
+                {items.map((item, itemIndex) => {
                   const key = `${category}-${item.name}`
                   const isChecked = checkedItems[key] || false
                   return (
                     <div
                       key={item.id}
-                      className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
+                      className="flex items-start gap-3 p-2 rounded-md hover:bg-accent/5 transition-all-smooth animate-in fade-in slide-in-from-left-4 duration-300"
+                      style={{ animationDelay: `${categoryIndex * 100 + itemIndex * 50}ms` }}
                     >
                       <Checkbox
                         id={key}
                         checked={isChecked}
                         onCheckedChange={() => toggleItem(category, item.name)}
-                        className="mt-1"
+                        className="mt-1 data-[state=checked]:bg-accent data-[state=checked]:border-accent transition-all-smooth"
                       />
                       <label htmlFor={key} className="flex-1 cursor-pointer select-none">
                         <div className="flex items-baseline justify-between gap-2">
-                          <span className={`font-medium ${isChecked ? "line-through text-muted-foreground" : ""}`}>
+                          <span
+                            className={`font-medium transition-all-smooth ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}
+                          >
                             {item.name}
                           </span>
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                          <span
+                            className={`text-sm whitespace-nowrap transition-all-smooth ${isChecked ? "text-muted-foreground" : "text-accent font-semibold"}`}
+                          >
                             {item.quantity} {item.unit}
                           </span>
                         </div>

@@ -4,127 +4,127 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Simple food-oriented color palette: warm orange primary, fresh green accent, neutral grays */
+  /* Vibrant food-oriented color palette with coral, emerald, and warm tones */
 
-  /* Neutrals - warm off-white and soft grays */
-  --background: oklch(0.99 0.005 85);
-  --foreground: oklch(0.25 0.01 85);
+  /* Neutrals - crisp whites and soft grays */
+  --background: oklch(0.99 0.002 85);
+  --foreground: oklch(0.2 0.015 265);
   --card: oklch(1.0 0 0);
-  --card-foreground: oklch(0.25 0.01 85);
+  --card-foreground: oklch(0.2 0.015 265);
   --popover: oklch(1.0 0 0);
-  --popover-foreground: oklch(0.25 0.01 85);
+  --popover-foreground: oklch(0.2 0.015 265);
 
-  /* Primary - warm appetizing orange/coral */
-  --primary: oklch(0.65 0.18 45);
+  /* Primary - vibrant coral/salmon (appetizing and energetic) */
+  --primary: oklch(0.68 0.19 25);
   --primary-foreground: oklch(1.0 0 0);
 
-  /* Secondary - soft warm gray */
-  --secondary: oklch(0.95 0.01 85);
-  --secondary-foreground: oklch(0.35 0.01 85);
+  /* Secondary - soft peach */
+  --secondary: oklch(0.96 0.02 45);
+  --secondary-foreground: oklch(0.3 0.02 25);
 
   /* Muted - light warm gray */
-  --muted: oklch(0.96 0.008 85);
-  --muted-foreground: oklch(0.5 0.01 85);
+  --muted: oklch(0.97 0.005 85);
+  --muted-foreground: oklch(0.48 0.015 265);
 
-  /* Accent - fresh green for healthy/natural feel */
-  --accent: oklch(0.6 0.15 145);
+  /* Accent - vibrant emerald green (fresh, healthy) */
+  --accent: oklch(0.62 0.17 155);
   --accent-foreground: oklch(1.0 0 0);
 
-  /* Destructive - tomato red */
-  --destructive: oklch(0.6 0.22 25);
+  /* Destructive - bright tomato red */
+  --destructive: oklch(0.62 0.24 25);
   --destructive-foreground: oklch(1.0 0 0);
 
   /* Borders and inputs */
-  --border: oklch(0.9 0.01 85);
-  --input: oklch(0.9 0.01 85);
-  --ring: oklch(0.65 0.18 45);
+  --border: oklch(0.92 0.005 85);
+  --input: oklch(0.92 0.005 85);
+  --ring: oklch(0.68 0.19 25);
 
-  /* Chart colors - food-themed palette */
-  --chart-1: oklch(0.65 0.18 45);
-  --chart-2: oklch(0.6 0.15 145);
-  --chart-3: oklch(0.6 0.22 25);
-  --chart-4: oklch(0.7 0.12 85);
-  --chart-5: oklch(0.55 0.16 65);
+  /* Chart colors - vibrant food palette */
+  --chart-1: oklch(0.68 0.19 25);
+  --chart-2: oklch(0.62 0.17 155);
+  --chart-3: oklch(0.7 0.18 65);
+  --chart-4: oklch(0.65 0.16 285);
+  --chart-5: oklch(0.6 0.2 45);
 
-  --radius: 0.5rem;
+  --radius: 0.75rem;
 
   /* Sidebar colors */
-  --sidebar: oklch(0.99 0.005 85);
-  --sidebar-foreground: oklch(0.25 0.01 85);
-  --sidebar-primary: oklch(0.65 0.18 45);
+  --sidebar: oklch(0.99 0.002 85);
+  --sidebar-foreground: oklch(0.2 0.015 265);
+  --sidebar-primary: oklch(0.68 0.19 25);
   --sidebar-primary-foreground: oklch(1.0 0 0);
-  --sidebar-accent: oklch(0.96 0.008 85);
-  --sidebar-accent-foreground: oklch(0.35 0.01 85);
-  --sidebar-border: oklch(0.9 0.01 85);
-  --sidebar-ring: oklch(0.65 0.18 45);
+  --sidebar-accent: oklch(0.97 0.005 85);
+  --sidebar-accent-foreground: oklch(0.3 0.02 25);
+  --sidebar-border: oklch(0.92 0.005 85);
+  --sidebar-ring: oklch(0.68 0.19 25);
 
   --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
+  --shadow-y: 2px;
+  --shadow-blur: 8px;
   --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
-  --shadow-color: #000000;
+  --shadow-opacity: 0.08;
+  --shadow-color: #ff6b6b;
 }
 
 .dark {
-  /* Dark mode with warm, appetizing tones */
+  /* Dark mode with vibrant, appetizing colors */
 
-  /* Neutrals - warm dark grays */
-  --background: oklch(0.15 0.01 85);
-  --foreground: oklch(0.95 0.01 85);
-  --card: oklch(0.18 0.015 85);
-  --card-foreground: oklch(0.95 0.01 85);
-  --popover: oklch(0.18 0.015 85);
-  --popover-foreground: oklch(0.95 0.01 85);
+  /* Neutrals - rich dark tones */
+  --background: oklch(0.14 0.015 265);
+  --foreground: oklch(0.97 0.005 85);
+  --card: oklch(0.17 0.018 265);
+  --card-foreground: oklch(0.97 0.005 85);
+  --popover: oklch(0.17 0.018 265);
+  --popover-foreground: oklch(0.97 0.005 85);
 
-  /* Primary - brighter warm orange for dark mode */
-  --primary: oklch(0.7 0.18 45);
-  --primary-foreground: oklch(0.15 0.01 85);
+  /* Primary - bright coral for dark mode */
+  --primary: oklch(0.72 0.19 25);
+  --primary-foreground: oklch(0.14 0.015 265);
 
-  /* Secondary - medium warm gray */
-  --secondary: oklch(0.25 0.015 85);
-  --secondary-foreground: oklch(0.85 0.01 85);
+  /* Secondary - warm dark gray */
+  --secondary: oklch(0.24 0.018 265);
+  --secondary-foreground: oklch(0.9 0.005 85);
 
-  /* Muted - dark warm gray */
-  --muted: oklch(0.22 0.015 85);
-  --muted-foreground: oklch(0.65 0.01 85);
+  /* Muted - medium dark gray */
+  --muted: oklch(0.21 0.018 265);
+  --muted-foreground: oklch(0.68 0.01 265);
 
-  /* Accent - vibrant green for dark mode */
-  --accent: oklch(0.65 0.15 145);
-  --accent-foreground: oklch(0.15 0.01 85);
+  /* Accent - bright emerald for dark mode */
+  --accent: oklch(0.66 0.17 155);
+  --accent-foreground: oklch(0.14 0.015 265);
 
-  /* Destructive - bright tomato red */
-  --destructive: oklch(0.65 0.22 25);
+  /* Destructive - vibrant red */
+  --destructive: oklch(0.66 0.24 25);
   --destructive-foreground: oklch(1.0 0 0);
 
   /* Borders and inputs */
-  --border: oklch(0.3 0.015 85);
-  --input: oklch(0.3 0.015 85);
-  --ring: oklch(0.7 0.18 45);
+  --border: oklch(0.28 0.018 265);
+  --input: oklch(0.28 0.018 265);
+  --ring: oklch(0.72 0.19 25);
 
-  /* Chart colors - food-themed palette for dark mode */
-  --chart-1: oklch(0.7 0.18 45);
-  --chart-2: oklch(0.65 0.15 145);
-  --chart-3: oklch(0.65 0.22 25);
-  --chart-4: oklch(0.75 0.12 85);
-  --chart-5: oklch(0.6 0.16 65);
+  /* Chart colors for dark mode */
+  --chart-1: oklch(0.72 0.19 25);
+  --chart-2: oklch(0.66 0.17 155);
+  --chart-3: oklch(0.74 0.18 65);
+  --chart-4: oklch(0.69 0.16 285);
+  --chart-5: oklch(0.64 0.2 45);
 
   /* Sidebar colors */
-  --sidebar: oklch(0.18 0.015 85);
-  --sidebar-foreground: oklch(0.95 0.01 85);
-  --sidebar-primary: oklch(0.7 0.18 45);
-  --sidebar-primary-foreground: oklch(0.15 0.01 85);
-  --sidebar-accent: oklch(0.25 0.015 85);
-  --sidebar-accent-foreground: oklch(0.85 0.01 85);
-  --sidebar-border: oklch(0.3 0.015 85);
-  --sidebar-ring: oklch(0.7 0.18 45);
+  --sidebar: oklch(0.17 0.018 265);
+  --sidebar-foreground: oklch(0.97 0.005 85);
+  --sidebar-primary: oklch(0.72 0.19 25);
+  --sidebar-primary-foreground: oklch(0.14 0.015 265);
+  --sidebar-accent: oklch(0.24 0.018 265);
+  --sidebar-accent-foreground: oklch(0.9 0.005 85);
+  --sidebar-border: oklch(0.28 0.018 265);
+  --sidebar-ring: oklch(0.72 0.19 25);
 
   --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
+  --shadow-y: 2px;
+  --shadow-blur: 12px;
   --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
-  --shadow-color: #000000;
+  --shadow-opacity: 0.15;
+  --shadow-color: #ff6b6b;
 }
 
 @theme inline {
@@ -201,5 +201,93 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Custom animations for smooth interactions */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes pulse-glow {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+    }
+    50% {
+      box-shadow: 0 0 20px 5px rgba(255, 107, 107, 0.3);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  @keyframes bounce-in {
+    0% {
+      transform: scale(0.3);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    70% {
+      transform: scale(0.9);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-pulse-glow {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .animate-bounce-in {
+    animation: bounce-in 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+
+  /* Smooth transitions for all interactive elements */
+  .transition-all-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Hover effects */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.15);
+  }
+
+  .hover-scale {
+    transition: transform 0.2s ease;
+  }
+
+  .hover-scale:hover {
+    transform: scale(1.05);
   }
 }
