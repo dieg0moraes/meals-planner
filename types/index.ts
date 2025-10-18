@@ -153,8 +153,8 @@ export const AgentOnboardingInputSchema = z.object({
         people: z
             .array(
                 z.object({
-                    gender: z.string().optional(),
-                    estimatedAge: z.number().int().min(0).max(120).optional(),
+                    gender: z.string().nullable(),
+                    estimatedAge: z.number().int().min(0).max(120).nullable(),
                     role: z.string(),
                 })
             )
@@ -163,16 +163,15 @@ export const AgentOnboardingInputSchema = z.object({
             .array(
                 z.object({
                     animal: z.string(),
-                    name: z.string().nullable().optional(),
+                    name: z.string().nullable(),
                 })
             )
             .default([]),
     }),
     dietaryRestrictions: z.array(z.string()).default([]),
-    favoriteFoods: z.array(z.string()).optional(),
-    dislikedFoods: z.array(z.string()).optional(),
-    goals: z.array(z.string()).min(1),
-    rawOnboarding: z.record(z.unknown()).optional(),
+    favoriteFoods: z.array(z.string()).default([]),
+    dislikedFoods: z.array(z.string()).default([]),
+    goals: z.array(z.string()).default([]),
 });
 
 export type AgentOnboardingInputParsed = z.infer<typeof AgentOnboardingInputSchema>;
