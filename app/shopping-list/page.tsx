@@ -1,51 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Printer, Share2, FileDown } from "lucide-react"
-
-const shoppingListData = {
-  Produce: [
-    { name: "Avocados", quantity: "2 units", recipe: "Avocado Toast" },
-    { name: "Mixed Berries", quantity: "300g", recipe: "Greek Yogurt Bowl" },
-    { name: "Asparagus", quantity: "1 bunch", recipe: "Grilled Salmon" },
-    { name: "Broccoli", quantity: "1 head", recipe: "Baked Cod" },
-    { name: "Cherry Tomatoes", quantity: "250g", recipe: "Scrambled Eggs" },
-    { name: "Mixed Greens", quantity: "200g", recipe: "Chicken Salad" },
-    { name: "Spinach", quantity: "100g", recipe: "Protein Smoothie" },
-    { name: "Romaine Lettuce", quantity: "1 head", recipe: "Caesar Salad" },
-  ],
-  "Dairy & Eggs": [
-    { name: "Greek Yogurt", quantity: "500g", recipe: "Yogurt Bowl" },
-    { name: "Eggs", quantity: "12 units", recipe: "Multiple recipes" },
-    { name: "Mozzarella", quantity: "200g", recipe: "Caprese Sandwich" },
-    { name: "Milk", quantity: "1L", recipe: "Pancakes" },
-  ],
-  "Meat & Fish": [
-    { name: "Salmon Fillets", quantity: "400g", recipe: "Grilled Salmon" },
-    { name: "Chicken Breast", quantity: "800g", recipe: "Multiple recipes" },
-    { name: "Cod Fillets", quantity: "400g", recipe: "Baked Cod" },
-    { name: "Ground Beef", quantity: "400g", recipe: "Beef Tacos" },
-    { name: "Shrimp", quantity: "400g", recipe: "Shrimp Pasta" },
-    { name: "Turkey Slices", quantity: "200g", recipe: "Turkey Wrap" },
-    { name: "Steak", quantity: "400g", recipe: "Grilled Steak" },
-    { name: "Whole Chicken", quantity: "1 unit", recipe: "Roasted Chicken" },
-  ],
-  Pantry: [
-    { name: "Quinoa", quantity: "500g", recipe: "Buddha Bowl" },
-    { name: "Lentils", quantity: "300g", recipe: "Lentil Soup" },
-    { name: "Whole Wheat Bread", quantity: "1 loaf", recipe: "Multiple recipes" },
-    { name: "Oats", quantity: "500g", recipe: "Oatmeal" },
-    { name: "Whole Wheat Pasta", quantity: "500g", recipe: "Shrimp Pasta" },
-    { name: "Taco Shells", quantity: "1 pack", recipe: "Beef Tacos" },
-    { name: "Pizza Dough", quantity: "1 unit", recipe: "Veggie Pizza" },
-  ],
-}
+import { getShoppingList, groupShoppingItemsByCategory } from "@/lib/data/queries"
+import type { ShoppingListItem } from "@/types"
 
 export default function ShoppingListPage() {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
+  const [shoppingData, setShoppingData] = useState<Record<string, ShoppingListItem[]>>({})
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const items = await getShoppingList()
+        const grouped = groupShoppingItemsByCategory(items)
+        setShoppingData(grouped)
+      } catch (error) {
+        console.error("[v0] Error fetching shopping list:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
 
   const toggleItem = (category: string, itemName: string) => {
     const key = `${category}-${itemName}`
@@ -54,10 +35,21 @@ export default function ShoppingListPage() {
 
   const markAllInCategory = (category: string) => {
     const newChecked = { ...checkedItems }
-    shoppingListData[category as keyof typeof shoppingListData].forEach((item) => {
+    shoppingData[category]?.forEach((item) => {
       newChecked[`${category}-${item.name}`] = true
     })
     setCheckedItems(newChecked)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="p-6 md:p-8 overflow-auto">
+        <div className="mb-8">
+          <h1 className="text-3xl font-semibold text-foreground mb-2">Shopping List</h1>
+          <p className="text-muted-foreground">Loading your shopping list...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -83,7 +75,7 @@ export default function ShoppingListPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {Object.entries(shoppingListData).map(([category, items]) => (
+        {Object.entries(shoppingData).map(([category, items]) => (
           <Card key={category} className="border-2">
             <CardHeader className="bg-emerald-50 border-b">
               <div className="flex items-center justify-between">
@@ -105,7 +97,7 @@ export default function ShoppingListPage() {
                   const isChecked = checkedItems[key] || false
                   return (
                     <div
-                      key={item.name}
+                      key={item.id}
                       className="flex items-start gap-3 p-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
                       <Checkbox
@@ -119,9 +111,11 @@ export default function ShoppingListPage() {
                           <span className={`font-medium ${isChecked ? "line-through text-muted-foreground" : ""}`}>
                             {item.name}
                           </span>
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">{item.quantity}</span>
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                            {item.quantity} {item.unit}
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">For {item.recipe}</p>
+                        {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
                       </label>
                     </div>
                   )
