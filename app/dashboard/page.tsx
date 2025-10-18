@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { SetupProgress } from "@/components/setup-progress"
 import { useEffect, useState } from "react"
-import { createBrowserClient } from "@/lib/supabase/client"
 import type { UserProfile } from "@/types"
 import { mockUserProfile } from "@/lib/data/mock-data"
 
@@ -20,34 +19,6 @@ export default function DashboardPage() {
     { id: "preferences", label: "Food preferences added", completed: false, inProgress: false },
     { id: "goals", label: "Goals configured", completed: false, inProgress: false },
   ])
-
-  useEffect(() => {
-    const supabase = createBrowserClient()
-
-    // Subscribe to user profile changes
-    const profileChannel = supabase
-      .channel("user_profile_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "profiles",
-        },
-        (payload) => {
-          console.log("[v0] User profile updated:", payload)
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            setUserProfile(payload.new as UserProfile)
-            updateSetupProgress(payload.new as UserProfile)
-          }
-        },
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(profileChannel)
-    }
-  }, [])
 
   const updateSetupProgress = (profile: UserProfile) => {
     setSetupSteps((prev) => {
