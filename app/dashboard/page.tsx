@@ -12,6 +12,7 @@ import Script from "next/script"
 import type { UserProfile } from "@/types"
 import { Person, Pet } from "@/types"
 import { createBrowserClient } from "@/lib/supabase/client"
+import { mockUserProfile } from "@/lib/data/mock-data"
 
 // Memoized widget component to prevent re-renders
 const ElevenLabsWidget = memo(() => {
@@ -33,9 +34,7 @@ const ElevenLabsWidget = memo(() => {
 ElevenLabsWidget.displayName = 'ElevenLabsWidget'
 
 export default function DashboardPage() {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [authUserId, setAuthUserId] = useState<string | null>(null)
-  const [isLoadingProfile, setIsLoadingProfile] = useState(true)
+  const [userProfile, setUserProfile] = useState<UserProfile>(mockUserProfile)
   const [setupSteps, setSetupSteps] = useState([
     { id: "profiles", label: "User profile created", completed: false, inProgress: false },
     { id: "household", label: "Household members added", completed: false, inProgress: false },
@@ -44,52 +43,10 @@ export default function DashboardPage() {
     { id: "goals", label: "Goals configured", completed: false, inProgress: false },
   ])
 
-  // Load authenticated user and profile from Supabase
-  useEffect(() => {
-    const loadProfile = async () => {
-      try {
-        const supabase = createBrowserClient()
-
-        // Get authenticated user
-        const { data: { user }, error: authError } = await supabase.auth.getUser()
-
-        if (authError || !user) {
-          console.error("No authenticated user:", authError)
-          setIsLoadingProfile(false)
-          return
-        }
-
-        setAuthUserId(user.id)
-
-        // Fetch profile from database
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("auth_user_id", user.id)
-          .maybeSingle()
-
-        if (profileError) {
-          console.error("Error fetching profile:", profileError)
-        }
-
-        if (profile) {
-          setUserProfile(profile as any as UserProfile)
-        }
-      } catch (error) {
-        console.error("Error loading profile:", error)
-      } finally {
-        setIsLoadingProfile(false)
-      }
-    }
-
-    loadProfile()
-  }, [])
-
-  // Poll for onboarding status updates (only when we have authUserId)
   const { status } = useProfileCompletionPolling({
-    userId: authUserId || "",
+    userId: userProfile.id,
     intervalMs: 3000,
-    enabled: !!authUserId,
+
   })
 
   // Update profile and steps when polling status changes
@@ -132,28 +89,24 @@ export default function DashboardPage() {
       ])
 
       // Update user profile with polling data
-      setUserProfile((prev) => {
-        if (!prev) return prev
-
-        return {
-          ...prev,
-          displayName: data.displayName || prev.displayName,
-          household: data.household ? {
-            people: data.household.people.map((person, index) => ({
-              id: `person-${index}`,
-              ...person,
-            })) as Person[],
-            pets: data.household.pets.map((pet, index) => ({
-              id: `pet-${index}`,
-              ...pet,
-            })) as Pet[],
-          } : prev.household,
-          dietaryRestrictions: data.dietaryRestrictions || prev.dietaryRestrictions,
-          favoriteFoods: data.favoriteFoods || prev.favoriteFoods,
-          dislikedFoods: data.dislikedFoods || prev.dislikedFoods,
-          goals: data.goals || prev.goals,
-        }
-      })
+      setUserProfile((prev) => ({
+        ...prev,
+        displayName: data.displayName || prev.displayName,
+        household: data.household ? {
+          people: data.household.people.map((person, index) => ({
+            id: `person-${index}`,
+            ...person,
+          })) as Person[],
+          pets: data.household.pets.map((pet, index) => ({
+            id: `pet-${index}`,
+            ...pet,
+          })) as Pet[],
+        } : prev.household,
+        dietaryRestrictions: data.dietaryRestrictions || prev.dietaryRestrictions,
+        favoriteFoods: data.favoriteFoods || prev.favoriteFoods,
+        dislikedFoods: data.dislikedFoods || prev.dislikedFoods,
+        goals: data.goals || prev.goals,
+      }))
     }
   }, [status])
 
@@ -186,26 +139,6 @@ export default function DashboardPage() {
     }
   }, [userProfile])
 
-  // Show loading state
-  if (isLoadingProfile) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-lg text-muted-foreground">Loading your profile...</div>
-      </div>
-    )
-  }
-
-  // Show message if no profile
-  if (!userProfile) {
-    return (
-      <div className="flex flex-col h-full items-center justify-center">
-        <div className="text-lg text-muted-foreground mb-4">No profile found. Please complete onboarding.</div>
-        <Link href="/onboarding">
-          <Button>Start Onboarding</Button>
-        </Link>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col h-full">
