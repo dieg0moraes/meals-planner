@@ -53,91 +53,89 @@ export default function ShoppingListPage() {
   }
 
   return (
-    <div className="p-6 md:p-8 overflow-auto">
-      <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2">
-          Shopping List
-        </h1>
-        <p className="text-lg text-muted-foreground mb-6">All ingredients needed for your weekly meal plan</p>
+    <div className="p-8 md:p-12 overflow-auto bg-gradient-to-br from-background via-background to-success/5">
+      <div className="mb-12 animate-slide-up max-w-7xl mx-auto">
+        <h1 className="text-5xl md:text-6xl font-bold gradient-text-accent mb-3 tracking-tight">Shopping List</h1>
+        <p className="text-xl text-muted-foreground mb-8 font-light">
+          All ingredients needed for your weekly meal plan
+        </p>
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-4">
           <Button
             variant="outline"
-            className="gap-2 bg-transparent hover:bg-primary/10 hover:text-primary hover:border-primary/40 transition-all-smooth hover-lift"
+            className="gap-2 bg-white/50 hover:bg-primary/10 hover:text-primary hover:border-primary/50 transition-all hover-lift-subtle shadow-sm px-6 py-5 text-base"
           >
-            <Printer className="h-4 w-4" />
+            <Printer className="h-5 w-5" />
             Print List
           </Button>
           <Button
             variant="outline"
-            className="gap-2 bg-transparent hover:bg-accent/10 hover:text-accent hover:border-accent/40 transition-all-smooth hover-lift"
+            className="gap-2 bg-white/50 hover:bg-accent/10 hover:text-accent hover:border-accent/50 transition-all hover-lift-subtle shadow-sm px-6 py-5 text-base"
           >
-            <Share2 className="h-4 w-4" />
+            <Share2 className="h-5 w-5" />
             Share
           </Button>
           <Button
             variant="outline"
-            className="gap-2 bg-transparent hover:bg-blue-500/10 hover:text-blue-600 hover:border-blue-500/40 transition-all-smooth hover-lift"
+            className="gap-2 bg-white/50 hover:bg-success/10 hover:text-success hover:border-success/50 transition-all hover-lift-subtle shadow-sm px-6 py-5 text-base"
           >
-            <FileDown className="h-4 w-4" />
+            <FileDown className="h-5 w-5" />
             Export to PDF
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-7xl mx-auto">
         {Object.entries(shoppingData).map(([category, items], categoryIndex) => (
           <Card
             key={category}
-            className="border-2 hover:border-accent/40 hover-lift animate-in fade-in slide-in-from-bottom-4 duration-500"
-            style={{ animationDelay: `${categoryIndex * 100}ms` }}
+            className="glass-card border-2 hover:border-success/50 hover-lift-subtle animate-scale-in shadow-lg overflow-hidden"
+            style={{ animationDelay: `${categoryIndex * 80}ms` }}
           >
-            <CardHeader className="bg-gradient-to-r from-accent/10 to-emerald-100/50 border-b border-accent/20">
+            <CardHeader className="bg-gradient-to-r from-success/15 to-accent/10 border-b-2 border-success/20 pb-4">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-bold bg-gradient-to-r from-accent to-emerald-700 bg-clip-text text-transparent">
-                  {category}
-                </CardTitle>
+                <CardTitle className="text-2xl font-bold gradient-text-accent">{category}</CardTitle>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => markAllInCategory(category)}
-                  className="text-accent hover:text-emerald-700 hover:bg-accent/10 transition-all-smooth hover-scale"
+                  className="text-success hover:text-success/80 hover:bg-success/10 transition-all hover-scale-subtle px-4 py-2"
                 >
                   Mark all
                 </Button>
               </div>
             </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-3">
+            <CardContent className="p-6">
+              <div className="space-y-4">
                 {items.map((item, itemIndex) => {
                   const key = `${category}-${item.name}`
                   const isChecked = checkedItems[key] || false
                   return (
                     <div
                       key={item.id}
-                      className="flex items-start gap-3 p-2 rounded-md hover:bg-accent/5 transition-all-smooth animate-in fade-in slide-in-from-left-4 duration-300"
-                      style={{ animationDelay: `${categoryIndex * 100 + itemIndex * 50}ms` }}
+                      className="flex items-start gap-4 p-3 rounded-lg hover:bg-success/5 transition-all animate-slide-up"
+                      style={{ animationDelay: `${categoryIndex * 80 + itemIndex * 40}ms` }}
                     >
                       <Checkbox
                         id={key}
                         checked={isChecked}
                         onCheckedChange={() => toggleItem(category, item.name)}
-                        className="mt-1 data-[state=checked]:bg-accent data-[state=checked]:border-accent transition-all-smooth"
+                        className="mt-1 data-[state=checked]:bg-success data-[state=checked]:border-success transition-all h-5 w-5"
                       />
                       <label htmlFor={key} className="flex-1 cursor-pointer select-none">
-                        <div className="flex items-baseline justify-between gap-2">
+                        <div className="flex items-baseline justify-between gap-3">
                           <span
-                            className={`font-medium transition-all-smooth ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}
+                            className={`font-medium text-base transition-all ${isChecked ? "line-through text-muted-foreground" : "text-foreground"}`}
                           >
                             {item.name}
                           </span>
                           <span
-                            className={`text-sm whitespace-nowrap transition-all-smooth ${isChecked ? "text-muted-foreground" : "text-accent font-semibold"}`}
+                            className={`text-sm whitespace-nowrap font-semibold transition-all ${isChecked ? "text-muted-foreground" : "text-success"}`}
                           >
                             {item.quantity} {item.unit}
                           </span>
                         </div>
-                        {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
+                        {item.notes && <p className="text-sm text-muted-foreground mt-1">{item.notes}</p>}
                       </label>
                     </div>
                   )

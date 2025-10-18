@@ -122,47 +122,47 @@ export default function DashboardPage() {
   }, [userProfile])
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex-1 p-6 md:p-8 overflow-auto">
-        <div className="max-w-6xl mx-auto">
-          <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent mb-2 animate-shimmer">
+    <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
+      <div className="flex-1 p-8 md:p-12 overflow-auto">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-12 animate-slide-up">
+            <h1 className="text-5xl md:text-6xl font-bold gradient-text-primary mb-3 tracking-tight">
               Hello, {userProfile.displayName || "there"}
             </h1>
-            <p className="text-lg text-muted-foreground">What should we plan this week?</p>
+            <p className="text-xl text-muted-foreground font-light">What should we plan this week?</p>
           </div>
 
-          <div className="space-y-8">
-            <div className="animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="space-y-12">
+            <div className="animate-scale-in">
               <SetupProgress steps={setupSteps} />
             </div>
 
             <div>
-              <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                <span className="inline-block w-1 h-6 bg-gradient-to-b from-primary to-accent rounded-full"></span>
+              <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                <span className="inline-block w-1.5 h-8 bg-gradient-to-b from-primary to-accent rounded-full"></span>
                 Household
               </h2>
-              <div className="flex gap-4 overflow-x-auto pb-2">
-                <Card className="border-2 hover:border-primary/40 hover-lift min-w-[280px] animate-in fade-in slide-in-from-left-5 duration-500 bg-gradient-to-br from-card to-primary/5">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-12 w-12 bg-gradient-to-br from-primary to-accent ring-2 ring-primary/20 hover-scale">
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-lg">
+              <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide">
+                <Card className="glass-card border-2 hover:border-primary/50 hover-lift-subtle min-w-[320px] animate-scale-in shadow-lg">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-16 w-16 bg-gradient-to-br from-primary to-accent ring-4 ring-primary/20 hover-scale-subtle shadow-md">
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-accent text-white font-bold text-2xl">
                           {userProfile.displayName[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <CardTitle className="text-lg">{userProfile.displayName}</CardTitle>
+                      <CardTitle className="text-xl font-semibold">{userProfile.displayName}</CardTitle>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       <div className="flex flex-wrap gap-2">
                         {userProfile.dietaryRestrictions.map((restriction, index) => (
                           <Badge
                             key={restriction}
                             variant="secondary"
-                            className="bg-destructive/15 text-destructive hover:bg-destructive/25 transition-all-smooth hover-scale animate-in fade-in zoom-in-95 duration-300"
-                            style={{ animationDelay: `${index * 100}ms` }}
+                            className="bg-destructive/10 text-destructive hover:bg-destructive/20 transition-all hover-scale-subtle px-3 py-1 animate-scale-in shadow-sm"
+                            style={{ animationDelay: `${index * 80}ms` }}
                           >
                             {restriction}
                           </Badge>
@@ -171,8 +171,8 @@ export default function DashboardPage() {
                           <Badge
                             key={goal}
                             variant="secondary"
-                            className="bg-primary/15 text-primary hover:bg-primary/25 transition-all-smooth hover-scale animate-in fade-in zoom-in-95 duration-300"
-                            style={{ animationDelay: `${(userProfile.dietaryRestrictions.length + index) * 100}ms` }}
+                            className="bg-primary/10 text-primary hover:bg-primary/20 transition-all hover-scale-subtle px-3 py-1 animate-scale-in shadow-sm"
+                            style={{ animationDelay: `${(userProfile.dietaryRestrictions.length + index) * 80}ms` }}
                           >
                             {goal}
                           </Badge>
@@ -185,28 +185,28 @@ export default function DashboardPage() {
                 {userProfile.household.people.map((person, index) => (
                   <Card
                     key={person.id}
-                    className="border-2 hover:border-accent/40 hover-lift min-w-[280px] animate-in fade-in slide-in-from-right-5 duration-500 bg-gradient-to-br from-card to-accent/5"
-                    style={{ animationDelay: `${(index + 1) * 150}ms` }}
+                    className="glass-card border-2 hover:border-accent/50 hover-lift-subtle min-w-[320px] animate-scale-in shadow-lg"
+                    style={{ animationDelay: `${(index + 1) * 120}ms` }}
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 bg-gradient-to-br from-accent to-blue-500 ring-2 ring-accent/20 hover-scale">
-                          <AvatarFallback className="bg-gradient-to-br from-accent to-blue-500 text-white font-bold text-lg">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 bg-gradient-to-br from-accent to-success ring-4 ring-accent/20 hover-scale-subtle shadow-md">
+                          <AvatarFallback className="bg-gradient-to-br from-accent to-success text-white font-bold text-2xl">
                             {person.role[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-lg capitalize">{person.role}</CardTitle>
+                        <CardTitle className="text-xl font-semibold capitalize">{person.role}</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2">
                         {person.estimatedAge && (
-                          <div className="text-sm text-muted-foreground">Age: {person.estimatedAge}</div>
+                          <div className="text-sm text-muted-foreground font-medium">Age: {person.estimatedAge}</div>
                         )}
                         {person.gender && (
                           <Badge
                             variant="secondary"
-                            className="bg-accent/15 text-accent hover:bg-accent/25 transition-all-smooth"
+                            className="bg-accent/10 text-accent hover:bg-accent/20 transition-all px-3 py-1 shadow-sm"
                           >
                             {person.gender}
                           </Badge>
@@ -219,23 +219,23 @@ export default function DashboardPage() {
                 {userProfile.household.pets.map((pet, index) => (
                   <Card
                     key={pet.id}
-                    className="border-2 hover:border-amber-400/40 hover-lift min-w-[280px] animate-in fade-in slide-in-from-right-5 duration-500 bg-gradient-to-br from-card to-amber-50"
-                    style={{ animationDelay: `${(userProfile.household.people.length + index + 1) * 150}ms` }}
+                    className="glass-card border-2 hover:border-amber-400/50 hover-lift-subtle min-w-[320px] animate-scale-in shadow-lg"
+                    style={{ animationDelay: `${(userProfile.household.people.length + index + 1) * 120}ms` }}
                   >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12 bg-gradient-to-br from-amber-400 to-orange-500 ring-2 ring-amber-400/20 hover-scale">
-                          <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold text-lg">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-16 w-16 bg-gradient-to-br from-amber-400 to-orange-500 ring-4 ring-amber-400/20 hover-scale-subtle shadow-md">
+                          <AvatarFallback className="bg-gradient-to-br from-amber-400 to-orange-500 text-white font-bold text-2xl">
                             {pet.animal[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-lg">{pet.name || `Pet ${pet.animal}`}</CardTitle>
+                        <CardTitle className="text-xl font-semibold">{pet.name || `Pet ${pet.animal}`}</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <Badge
                         variant="secondary"
-                        className="bg-amber-100 text-amber-700 hover:bg-amber-200 transition-all-smooth hover-scale capitalize"
+                        className="bg-amber-100 text-amber-700 hover:bg-amber-200 transition-all hover-scale-subtle capitalize px-3 py-1 shadow-sm"
                       >
                         {pet.animal}
                       </Badge>
@@ -246,20 +246,20 @@ export default function DashboardPage() {
             </div>
 
             {userProfile.favoriteFoods && userProfile.favoriteFoods.length > 0 && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="inline-block w-1 h-6 bg-gradient-to-b from-accent to-green-600 rounded-full"></span>
+              <div className="animate-slide-up">
+                <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                  <span className="inline-block w-1.5 h-8 bg-gradient-to-b from-success to-green-600 rounded-full"></span>
                   Favorite Foods
                 </h2>
-                <Card className="border-2 hover:border-accent/40 hover-lift bg-gradient-to-br from-card to-accent/5">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-wrap gap-2">
+                <Card className="glass-card border-2 hover:border-success/50 hover-lift-subtle shadow-lg">
+                  <CardContent className="pt-8">
+                    <div className="flex flex-wrap gap-3">
                       {userProfile.favoriteFoods.map((food, index) => (
                         <Badge
                           key={food}
                           variant="secondary"
-                          className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 hover:from-green-100 hover:to-emerald-100 transition-all-smooth hover-scale animate-in fade-in zoom-in-95 duration-300 text-sm py-1.5 px-3"
-                          style={{ animationDelay: `${index * 80}ms` }}
+                          className="bg-gradient-to-r from-green-50 to-emerald-50 text-green-700 hover:from-green-100 hover:to-emerald-100 transition-all hover-scale-subtle text-base py-2 px-4 animate-scale-in shadow-sm"
+                          style={{ animationDelay: `${index * 60}ms` }}
                         >
                           ❤️ {food}
                         </Badge>
@@ -271,20 +271,20 @@ export default function DashboardPage() {
             )}
 
             {userProfile.dislikedFoods && userProfile.dislikedFoods.length > 0 && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <h2 className="text-2xl font-bold text-foreground mb-4 flex items-center gap-2">
-                  <span className="inline-block w-1 h-6 bg-gradient-to-b from-destructive to-red-600 rounded-full"></span>
+              <div className="animate-slide-up">
+                <h2 className="text-3xl font-bold text-foreground mb-6 flex items-center gap-3">
+                  <span className="inline-block w-1.5 h-8 bg-gradient-to-b from-destructive to-red-600 rounded-full"></span>
                   Disliked Foods
                 </h2>
-                <Card className="border-2 hover:border-destructive/40 hover-lift bg-gradient-to-br from-card to-destructive/5">
-                  <CardContent className="pt-6">
-                    <div className="flex flex-wrap gap-2">
+                <Card className="glass-card border-2 hover:border-destructive/50 hover-lift-subtle shadow-lg">
+                  <CardContent className="pt-8">
+                    <div className="flex flex-wrap gap-3">
                       {userProfile.dislikedFoods.map((food, index) => (
                         <Badge
                           key={food}
                           variant="secondary"
-                          className="bg-gradient-to-r from-red-50 to-rose-50 text-red-700 hover:from-red-100 hover:to-rose-100 transition-all-smooth hover-scale animate-in fade-in zoom-in-95 duration-300 text-sm py-1.5 px-3"
-                          style={{ animationDelay: `${index * 80}ms` }}
+                          className="bg-gradient-to-r from-red-50 to-rose-50 text-red-700 hover:from-red-100 hover:to-rose-100 transition-all hover-scale-subtle text-base py-2 px-4 animate-scale-in shadow-sm"
+                          style={{ animationDelay: `${index * 60}ms` }}
                         >
                           ❌ {food}
                         </Badge>
@@ -295,11 +295,11 @@ export default function DashboardPage() {
               </div>
             )}
 
-            <div className="flex justify-center pt-6 animate-in fade-in zoom-in-95 duration-700 delay-300">
+            <div className="flex justify-center pt-8 animate-scale-in">
               <Link href="/meal-plan">
                 <Button
                   size="lg"
-                  className="bg-gradient-to-r from-primary via-accent to-primary hover:shadow-lg hover:shadow-primary/30 text-white px-10 py-6 text-lg font-semibold hover-lift animate-pulse-glow"
+                  className="bg-gradient-to-r from-primary via-accent to-primary hover:shadow-2xl hover:shadow-primary/30 text-white px-12 py-7 text-xl font-semibold hover-lift-subtle animate-glow-pulse rounded-xl"
                 >
                   Confirm Profile & View Meal Plan →
                 </Button>
