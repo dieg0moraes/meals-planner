@@ -5,11 +5,12 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { useProfileCompletionPolling } from "@/hooks/use-profile-completion-polling"
 import { SetupProgress } from "@/components/setup-progress"
 import { useEffect, useState } from "react"
-import type { UserProfile, Person, Pet } from "@/types"
+import type { UserProfile } from "@/types"
 import { mockUserProfile } from "@/lib/data/mock-data"
-import { useProfileCompletionPolling } from "@/hooks/use-profile-completion-polling"
+import { Person, Pet } from "@/types"
 
 export default function DashboardPage() {
   const [userProfile, setUserProfile] = useState<UserProfile>(mockUserProfile)
@@ -31,7 +32,7 @@ export default function DashboardPage() {
   useEffect(() => {
     if (status?.onboardingData) {
       const data = status.onboardingData
-      
+
       // Update setup steps
       setSetupSteps([
         {
@@ -148,9 +149,9 @@ export default function DashboardPage() {
                     <div className="space-y-2">
                       <div className="flex flex-wrap gap-2">
                         {userProfile.dietaryRestrictions.map((restriction, index) => (
-                          <Badge 
-                            key={restriction} 
-                            variant="secondary" 
+                          <Badge
+                            key={restriction}
+                            variant="secondary"
                             className="bg-destructive/10 text-destructive animate-in fade-in zoom-in-95 duration-300"
                             style={{ animationDelay: `${index * 100}ms` }}
                           >
@@ -158,9 +159,9 @@ export default function DashboardPage() {
                           </Badge>
                         ))}
                         {userProfile.goals.map((goal, index) => (
-                          <Badge 
-                            key={goal} 
-                            variant="secondary" 
+                          <Badge
+                            key={goal}
+                            variant="secondary"
                             className="bg-primary/10 text-primary animate-in fade-in zoom-in-95 duration-300"
                             style={{ animationDelay: `${(userProfile.dietaryRestrictions.length + index) * 100}ms` }}
                           >
@@ -174,8 +175,8 @@ export default function DashboardPage() {
 
                 {/* Household members */}
                 {userProfile.household.people.map((person, index) => (
-                  <Card 
-                    key={person.id} 
+                  <Card
+                    key={person.id}
                     className="border-2 hover:border-primary/20 transition-colors min-w-[280px] animate-in fade-in slide-in-from-right-5 duration-500"
                     style={{ animationDelay: `${(index + 1) * 150}ms` }}
                   >
@@ -206,8 +207,8 @@ export default function DashboardPage() {
 
                 {/* Pets */}
                 {userProfile.household.pets.map((pet, index) => (
-                  <Card 
-                    key={pet.id} 
+                  <Card
+                    key={pet.id}
                     className="border-2 hover:border-primary/20 transition-colors min-w-[280px] animate-in fade-in slide-in-from-right-5 duration-500"
                     style={{ animationDelay: `${(userProfile.household.people.length + index + 1) * 150}ms` }}
                   >
@@ -238,9 +239,9 @@ export default function DashboardPage() {
                   <CardContent className="pt-6">
                     <div className="flex flex-wrap gap-2">
                       {userProfile.favoriteFoods.map((food, index) => (
-                        <Badge 
-                          key={food} 
-                          variant="secondary" 
+                        <Badge
+                          key={food}
+                          variant="secondary"
                           className="bg-green-50 text-green-700 animate-in fade-in zoom-in-95 duration-300"
                           style={{ animationDelay: `${index * 80}ms` }}
                         >
@@ -260,9 +261,9 @@ export default function DashboardPage() {
                   <CardContent className="pt-6">
                     <div className="flex flex-wrap gap-2">
                       {userProfile.dislikedFoods.map((food, index) => (
-                        <Badge 
-                          key={food} 
-                          variant="secondary" 
+                        <Badge
+                          key={food}
+                          variant="secondary"
                           className="bg-red-50 text-red-700 animate-in fade-in zoom-in-95 duration-300"
                           style={{ animationDelay: `${index * 80}ms` }}
                         >

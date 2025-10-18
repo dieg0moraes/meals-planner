@@ -19,6 +19,7 @@ export const mockUserProfile: UserProfile = {
   displayName: "Ana García",
   locale: "es-UY",
   timeZone: FIXED_TIME_ZONE,
+  location: FIXED_LOCATION,
   household: {
     people: [
       {
