@@ -8,133 +8,80 @@ import Link from "next/link"
 import { SetupProgress } from "@/components/setup-progress"
 import { useEffect, useState } from "react"
 import { createBrowserClient } from "@/lib/supabase/client"
-import type { UserProfile, FamilyPreferences, CookingHabits } from "@/lib/data/mock-data"
-import { mockUserProfiles, mockFamilyPreferences, mockCookingHabits } from "@/lib/data/mock-data"
+import type { UserProfile } from "@/types"
+import { mockUserProfile } from "@/lib/data/mock-data"
 
 export default function DashboardPage() {
-  const [userProfiles, setUserProfiles] = useState<UserProfile[]>(mockUserProfiles)
-  const [familyPreferences, setFamilyPreferences] = useState<FamilyPreferences>(mockFamilyPreferences)
-  const [cookingHabits, setCookingHabits] = useState<CookingHabits>(mockCookingHabits)
+  const [userProfile, setUserProfile] = useState<UserProfile>(mockUserProfile)
   const [setupSteps, setSetupSteps] = useState([
-    { id: "profiles", label: "User profiles created", completed: true, inProgress: false },
-    { id: "dietary", label: "Dietary preferences added", completed: false, inProgress: false },
-    { id: "allergies", label: "Allergies documented", completed: false, inProgress: false },
-    { id: "family", label: "Family preferences set", completed: false, inProgress: false },
-    { id: "cooking", label: "Cooking habits configured", completed: false, inProgress: false },
+    { id: "profiles", label: "User profile created", completed: true, inProgress: false },
+    { id: "household", label: "Household members added", completed: false, inProgress: false },
+    { id: "dietary", label: "Dietary restrictions set", completed: false, inProgress: false },
+    { id: "preferences", label: "Food preferences added", completed: false, inProgress: false },
+    { id: "goals", label: "Goals configured", completed: false, inProgress: false },
   ])
 
   useEffect(() => {
     const supabase = createBrowserClient()
 
-    // Subscribe to user profiles changes
-    const profilesChannel = supabase
-      .channel("user_profiles_changes")
+    // Subscribe to user profile changes
+    const profileChannel = supabase
+      .channel("user_profile_changes")
       .on(
         "postgres_changes",
         {
           event: "*",
           schema: "public",
-          table: "user_profiles",
+          table: "profiles",
         },
         (payload) => {
           console.log("[v0] User profile updated:", payload)
-          // Update local state with new data
           if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            setUserProfiles((prev) => {
-              const index = prev.findIndex((p) => p.id === payload.new.id)
-              if (index >= 0) {
-                const updated = [...prev]
-                updated[index] = payload.new as UserProfile
-                return updated
-              }
-              return [...prev, payload.new as UserProfile]
-            })
-            updateSetupProgress()
-          }
-        },
-      )
-      .subscribe()
-
-    // Subscribe to family preferences changes
-    const preferencesChannel = supabase
-      .channel("family_preferences_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "family_preferences",
-        },
-        (payload) => {
-          console.log("[v0] Family preferences updated:", payload)
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            setFamilyPreferences(payload.new as FamilyPreferences)
-            updateSetupProgress()
-          }
-        },
-      )
-      .subscribe()
-
-    // Subscribe to cooking habits changes
-    const habitsChannel = supabase
-      .channel("cooking_habits_changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "cooking_habits",
-        },
-        (payload) => {
-          console.log("[v0] Cooking habits updated:", payload)
-          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
-            setCookingHabits(payload.new as CookingHabits)
-            updateSetupProgress()
+            setUserProfile(payload.new as UserProfile)
+            updateSetupProgress(payload.new as UserProfile)
           }
         },
       )
       .subscribe()
 
     return () => {
-      supabase.removeChannel(profilesChannel)
-      supabase.removeChannel(preferencesChannel)
-      supabase.removeChannel(habitsChannel)
+      supabase.removeChannel(profileChannel)
     }
   }, [])
 
-  const updateSetupProgress = () => {
+  const updateSetupProgress = (profile: UserProfile) => {
     setSetupSteps((prev) => {
       const updated = [...prev]
 
-      // Check if profiles exist
-      updated[0].completed = userProfiles.length > 0
+      // Check if profile exists
+      updated[0].completed = !!profile.id
 
-      // Check if dietary preferences are added
-      updated[1].completed = userProfiles.some((p) => p.dietary_preferences.length > 0)
+      // Check if household members are added
+      updated[1].completed = profile.household.people.length > 0 || profile.household.pets.length > 0
 
-      // Check if allergies are documented
-      updated[2].completed = userProfiles.some((p) => p.allergies.length > 0)
+      // Check if dietary restrictions are set
+      updated[2].completed = profile.dietaryRestrictions.length > 0
 
-      // Check if family preferences are set
-      updated[3].completed = familyPreferences.preferences.length > 0
+      // Check if food preferences are added
+      updated[3].completed = (profile.favoriteFoods?.length ?? 0) > 0 || (profile.dislikedFoods?.length ?? 0) > 0
 
-      // Check if cooking habits are configured
-      updated[4].completed = cookingHabits.habits.length > 0
+      // Check if goals are configured
+      updated[4].completed = profile.goals.length > 0
 
       return updated
     })
   }
 
   useEffect(() => {
-    updateSetupProgress()
-  }, [userProfiles, familyPreferences, cookingHabits])
+    updateSetupProgress(userProfile)
+  }, [userProfile])
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 p-6 md:p-8 overflow-auto">
         <div className="max-w-6xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-semibold text-foreground mb-2">Hello, {userProfiles[0]?.name || "there"}</h1>
+            <h1 className="text-3xl font-semibold text-foreground mb-2">Hello, {userProfile.displayName || "there"}</h1>
             <p className="text-lg text-muted-foreground">What should we plan this week?</p>
           </div>
 
@@ -142,72 +89,125 @@ export default function DashboardPage() {
             <SetupProgress steps={setupSteps} />
 
             <div>
-              <h2 className="text-xl font-semibold text-foreground mb-4">User Profiles</h2>
+              <h2 className="text-xl font-semibold text-foreground mb-4">Household</h2>
               <div className="flex gap-4 overflow-x-auto pb-2">
-                {userProfiles.map((profile) => (
-                  <Card key={profile.id} className="border-2 hover:border-primary/20 transition-colors min-w-[280px]">
+                {/* Main user card */}
+                <Card className="border-2 hover:border-primary/20 transition-colors min-w-[280px]">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 bg-primary/10">
+                        <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                          {userProfile.displayName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <CardTitle className="text-lg">{userProfile.displayName}</CardTitle>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground">
+                        📍 {userProfile.location.city}, {userProfile.location.stateOrRegion}
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {userProfile.dietaryRestrictions.map((restriction) => (
+                          <Badge key={restriction} variant="secondary" className="bg-destructive/10 text-destructive">
+                            {restriction}
+                          </Badge>
+                        ))}
+                        {userProfile.goals.map((goal) => (
+                          <Badge key={goal} variant="secondary" className="bg-primary/10 text-primary">
+                            {goal}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Household members */}
+                {userProfile.household.people.map((person) => (
+                  <Card key={person.id} className="border-2 hover:border-primary/20 transition-colors min-w-[280px]">
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-3">
-                        <Avatar
-                          className={`h-10 w-10 ${profile.avatar_color === "primary" ? "bg-primary/10" : profile.avatar_color === "blue" ? "bg-blue-100" : "bg-purple-100"}`}
-                        >
-                          <AvatarFallback
-                            className={`${profile.avatar_color === "primary" ? "bg-primary/10 text-primary" : profile.avatar_color === "blue" ? "bg-blue-100 text-blue-700" : "bg-purple-100 text-purple-700"} font-semibold`}
-                          >
-                            {profile.name[0]}
+                        <Avatar className="h-10 w-10 bg-blue-100">
+                          <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold">
+                            {person.role[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
-                        <CardTitle className="text-lg">{profile.name}</CardTitle>
+                        <CardTitle className="text-lg capitalize">{person.role}</CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="flex flex-wrap gap-2">
-                        {profile.dietary_preferences.map((pref) => (
-                          <Badge key={pref} variant="secondary" className="bg-primary/10 text-primary">
-                            {pref}
+                      <div className="space-y-2">
+                        {person.estimatedAge && (
+                          <div className="text-sm text-muted-foreground">Age: {person.estimatedAge}</div>
+                        )}
+                        {person.gender && (
+                          <Badge variant="secondary" className="bg-blue-50 text-blue-700">
+                            {person.gender}
                           </Badge>
-                        ))}
-                        {profile.allergies.map((allergy) => (
-                          <Badge key={allergy} variant="secondary" className="bg-destructive/10 text-destructive">
-                            {allergy}
-                          </Badge>
-                        ))}
+                        )}
                       </div>
+                    </CardContent>
+                  </Card>
+                ))}
+
+                {/* Pets */}
+                {userProfile.household.pets.map((pet) => (
+                  <Card key={pet.id} className="border-2 hover:border-primary/20 transition-colors min-w-[280px]">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 bg-amber-100">
+                          <AvatarFallback className="bg-amber-100 text-amber-700 font-semibold">
+                            {pet.animal[0].toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <CardTitle className="text-lg">{pet.name || `Pet ${pet.animal}`}</CardTitle>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Badge variant="secondary" className="bg-amber-50 text-amber-700 capitalize">
+                        {pet.animal}
+                      </Badge>
                     </CardContent>
                   </Card>
                 ))}
               </div>
             </div>
 
-            <div>
-              <h2 className="text-xl font-semibold text-foreground mb-4">Family Preferences</h2>
-              <Card className="border-2 hover:border-primary/20 transition-colors">
-                <CardContent className="pt-6">
-                  <div className="flex flex-wrap gap-2">
-                    {familyPreferences.preferences.map((pref) => (
-                      <Badge key={pref} variant="secondary" className="bg-blue-50 text-blue-700">
-                        {pref}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {userProfile.favoriteFoods && userProfile.favoriteFoods.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold text-foreground mb-4">Favorite Foods</h2>
+                <Card className="border-2 hover:border-primary/20 transition-colors">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.favoriteFoods.map((food) => (
+                        <Badge key={food} variant="secondary" className="bg-green-50 text-green-700">
+                          ❤️ {food}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-            <div>
-              <h2 className="text-xl font-semibold text-foreground mb-4">Cooking Habits</h2>
-              <Card className="border-2 hover:border-primary/20 transition-colors">
-                <CardContent className="pt-6">
-                  <div className="flex flex-wrap gap-2">
-                    {cookingHabits.habits.map((habit) => (
-                      <Badge key={habit} variant="secondary" className="bg-amber-50 text-amber-700">
-                        {habit}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            {userProfile.dislikedFoods && userProfile.dislikedFoods.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold text-foreground mb-4">Disliked Foods</h2>
+                <Card className="border-2 hover:border-primary/20 transition-colors">
+                  <CardContent className="pt-6">
+                    <div className="flex flex-wrap gap-2">
+                      {userProfile.dislikedFoods.map((food) => (
+                        <Badge key={food} variant="secondary" className="bg-red-50 text-red-700">
+                          ❌ {food}
+                        </Badge>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
             <div className="flex justify-center pt-6">
               <Link href="/meal-plan">

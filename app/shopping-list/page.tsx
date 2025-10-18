@@ -6,11 +6,11 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Printer, Share2, FileDown } from "lucide-react"
 import { getShoppingList, groupShoppingItemsByCategory } from "@/lib/data/queries"
-import type { ShoppingItem } from "@/lib/data/mock-data"
+import type { ShoppingListItem } from "@/types"
 
 export default function ShoppingListPage() {
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({})
-  const [shoppingData, setShoppingData] = useState<Record<string, ShoppingItem[]>>({})
+  const [shoppingData, setShoppingData] = useState<Record<string, ShoppingListItem[]>>({})
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -111,9 +111,11 @@ export default function ShoppingListPage() {
                           <span className={`font-medium ${isChecked ? "line-through text-muted-foreground" : ""}`}>
                             {item.name}
                           </span>
-                          <span className="text-sm text-muted-foreground whitespace-nowrap">{item.quantity}</span>
+                          <span className="text-sm text-muted-foreground whitespace-nowrap">
+                            {item.quantity} {item.unit}
+                          </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">For {item.recipe}</p>
+                        {item.notes && <p className="text-xs text-muted-foreground mt-0.5">{item.notes}</p>}
                       </label>
                     </div>
                   )

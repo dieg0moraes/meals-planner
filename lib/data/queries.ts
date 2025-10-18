@@ -1,118 +1,91 @@
-import {
-  mockUserProfiles,
-  mockFamilyPreferences,
-  mockCookingHabits,
-  mockMealPlan,
-  mockShoppingList,
-  type UserProfile,
-  type FamilyPreferences,
-  type CookingHabits,
-  type Meal,
-  type ShoppingItem,
-} from "./mock-data"
+import { mockUserProfile, mockWeeklyMeals, mockShoppingList } from "./mock-data"
+import type { UserProfile, Meal, WeeklyMeals, ShoppingListItem } from "@/types"
 
 // Toggle this to switch between mock data and real Supabase queries
 const USE_MOCK_DATA = true
 
-// User Profiles
-export async function getUserProfiles(): Promise<UserProfile[]> {
+// User Profile
+export async function getUserProfile(): Promise<UserProfile> {
   if (USE_MOCK_DATA) {
-    return mockUserProfiles
+    return mockUserProfile
   }
 
   // TODO: Replace with real Supabase query when database is ready
   // const supabase = await getSupabaseServerClient()
-  // const { data, error } = await supabase.from('user_profiles').select('*')
+  // const { data, error } = await supabase.from('profiles').select('*').single()
   // if (error) throw error
   // return data
 
-  return mockUserProfiles
+  return mockUserProfile
 }
 
-// Family Preferences
-export async function getFamilyPreferences(): Promise<FamilyPreferences> {
+// Weekly Meals
+export async function getWeeklyMeals(): Promise<WeeklyMeals> {
   if (USE_MOCK_DATA) {
-    return mockFamilyPreferences
+    return mockWeeklyMeals
   }
 
   // TODO: Replace with real Supabase query when database is ready
   // const supabase = await getSupabaseServerClient()
-  // const { data, error } = await supabase.from('family_preferences').select('*').single()
+  // const { data, error } = await supabase.from('weekly_meals').select('*').single()
   // if (error) throw error
   // return data
 
-  return mockFamilyPreferences
+  return mockWeeklyMeals
 }
 
-// Cooking Habits
-export async function getCookingHabits(): Promise<CookingHabits> {
-  if (USE_MOCK_DATA) {
-    return mockCookingHabits
-  }
-
-  // TODO: Replace with real Supabase query when database is ready
-  // const supabase = await getSupabaseServerClient()
-  // const { data, error } = await supabase.from('cooking_habits').select('*').single()
-  // if (error) throw error
-  // return data
-
-  return mockCookingHabits
-}
-
-// Meal Plan
+// Meal Plan (just the meals array)
 export async function getMealPlan(): Promise<Meal[]> {
-  if (USE_MOCK_DATA) {
-    return mockMealPlan
-  }
-
-  // TODO: Replace with real Supabase query when database is ready
-  // const supabase = await getSupabaseServerClient()
-  // const { data, error } = await supabase.from('meals').select('*').order('day')
-  // if (error) throw error
-  // return data
-
-  return mockMealPlan
+  const weeklyMeals = await getWeeklyMeals()
+  return weeklyMeals.meals
 }
 
 // Shopping List
-export async function getShoppingList(): Promise<ShoppingItem[]> {
+export async function getShoppingList(): Promise<ShoppingListItem[]> {
   if (USE_MOCK_DATA) {
-    return mockShoppingList
+    return mockShoppingList.items
   }
 
   // TODO: Replace with real Supabase query when database is ready
   // const supabase = await getSupabaseServerClient()
-  // const { data, error } = await supabase.from('shopping_items').select('*').order('category')
+  // const { data, error } = await supabase.from('shopping_lists').select('*').single()
   // if (error) throw error
-  // return data
+  // return data.items
 
-  return mockShoppingList
+  return mockShoppingList.items
 }
 
 // Helper to group shopping items by category
-export function groupShoppingItemsByCategory(items: ShoppingItem[]): Record<string, ShoppingItem[]> {
+export function groupShoppingItemsByCategory(items: ShoppingListItem[]): Record<string, ShoppingListItem[]> {
   return items.reduce(
     (acc, item) => {
-      if (!acc[item.category]) {
-        acc[item.category] = []
+      const category = item.category || "Other"
+      if (!acc[category]) {
+        acc[category] = []
       }
-      acc[item.category].push(item)
+      acc[category].push(item)
       return acc
     },
-    {} as Record<string, ShoppingItem[]>,
+    {} as Record<string, ShoppingListItem[]>,
   )
 }
 
-// Helper to group meals by day
+// We'll organize by meal tags (breakfast, lunch_dinner) for now
 export function groupMealsByDay(meals: Meal[]): Record<string, Meal[]> {
-  return meals.reduce(
-    (acc, meal) => {
-      if (!acc[meal.day]) {
-        acc[meal.day] = []
-      }
-      acc[meal.day].push(meal)
-      return acc
-    },
-    {} as Record<string, Meal[]>,
-  )
+  // For now, distribute meals across the week
+  // In a real implementation, meals would have day assignments
+  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+  const grouped: Record<string, Meal[]> = {}
+
+  daysOfWeek.forEach((day, index) => {
+    grouped[day] = []
+  })
+
+  // Distribute meals evenly across the week (simplified logic)
+  meals.forEach((meal, index) => {
+    const dayIndex = index % 7
+    grouped[daysOfWeek[dayIndex]].push(meal)
+  })
+
+  return grouped
 }

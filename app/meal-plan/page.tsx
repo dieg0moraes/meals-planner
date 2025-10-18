@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { RefreshCw } from "lucide-react"
 import Image from "next/image"
 import { getMealPlan, groupMealsByDay } from "@/lib/data/queries"
@@ -31,7 +32,7 @@ export default async function MealPlanPage() {
                     <div className="flex items-start gap-3">
                       <div className="relative w-20 h-20 rounded-md overflow-hidden flex-shrink-0 bg-muted">
                         <Image
-                          src={`/.jpg?height=80&width=80&query=${encodeURIComponent(meal.image_query)}`}
+                          src={`/.jpg?height=80&width=80&query=${encodeURIComponent(meal.name)}`}
                           alt={meal.name}
                           fill
                           className="object-cover"
@@ -40,7 +41,17 @@ export default async function MealPlanPage() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-1">
                           <div>
-                            <p className="text-xs font-medium text-emerald-600 uppercase">{meal.meal_type}</p>
+                            <div className="flex flex-wrap gap-1 mb-1">
+                              {meal.tags?.slice(0, 2).map((tag) => (
+                                <Badge
+                                  key={tag}
+                                  variant="secondary"
+                                  className="text-xs bg-emerald-100 text-emerald-700"
+                                >
+                                  {tag.replace("_", " ")}
+                                </Badge>
+                              ))}
+                            </div>
                             <h3 className="font-semibold text-sm leading-tight">{meal.name}</h3>
                           </div>
                           <Button variant="ghost" size="icon" className="h-7 w-7 flex-shrink-0">
@@ -48,7 +59,10 @@ export default async function MealPlanPage() {
                             <span className="sr-only">Swap meal</span>
                           </Button>
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{meal.ingredients}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {meal.ingredients.length} ingredients
+                          {meal.notes && ` • ${meal.notes}`}
+                        </p>
                       </div>
                     </div>
                   </div>

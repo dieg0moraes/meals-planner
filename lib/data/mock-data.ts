@@ -1,11 +1,6 @@
 // Mock data types
-export interface UserProfile {
-  id: string
-  name: string
-  avatar_color: string
-  dietary_preferences: string[]
-  allergies: string[]
-}
+import type { UserProfile, Meal, WeeklyMeals, ShoppingList, ShoppingListItem } from "@/types"
+import { FIXED_LOCATION, FIXED_TIME_ZONE } from "@/types"
 
 export interface FamilyPreferences {
   id: string
@@ -17,275 +12,218 @@ export interface CookingHabits {
   habits: string[]
 }
 
-export interface Meal {
-  id: string
-  name: string
-  ingredients: string
-  meal_type: "Breakfast" | "Lunch" | "Dinner"
-  day: string
-  image_query: string
+// Mock user profile
+export const mockUserProfile: UserProfile = {
+  id: "user-1",
+  authUserId: "auth-user-1",
+  displayName: "Ana García",
+  locale: "es-UY",
+  timeZone: FIXED_TIME_ZONE,
+  location: FIXED_LOCATION,
+  household: {
+    people: [
+      {
+        id: "person-1",
+        gender: "female",
+        estimatedAge: 32,
+        role: "self",
+      },
+      {
+        id: "person-2",
+        gender: "male",
+        estimatedAge: 35,
+        role: "partner",
+      },
+      {
+        id: "person-3",
+        gender: "female",
+        estimatedAge: 8,
+        role: "daughter",
+      },
+    ],
+    pets: [
+      {
+        id: "pet-1",
+        animal: "dog",
+        name: "Luna",
+      },
+    ],
+  },
+  dietaryRestrictions: ["no_nuts", "low_carb"],
+  favoriteFoods: ["chicken", "salmon", "avocado", "berries"],
+  dislikedFoods: ["liver", "oysters"],
+  goals: ["save_money", "maximize_protein", "kid_friendly"],
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  rawOnboarding: {},
 }
 
-export interface ShoppingItem {
-  id: string
-  name: string
-  quantity: string
-  category: string
-  recipe: string
-}
-
-// Mock user profiles
-export const mockUserProfiles: UserProfile[] = [
+// Mock meals
+const mockMeals: Meal[] = [
   {
-    id: "1",
-    name: "Ana",
-    avatar_color: "primary",
-    dietary_preferences: ["Low-Carb Diet", "Loves Spicy Food"],
-    allergies: ["Allergic to Nuts"],
+    id: "meal-1",
+    name: "Greek Yogurt Bowl",
+    ingredients: [
+      { name: "Greek yogurt", quantity: 200, unit: "g" },
+      { name: "Mixed berries", quantity: 100, unit: "g" },
+      { name: "Honey", quantity: 1, unit: "tbsp", isOptional: true },
+    ],
+    tags: ["breakfast", "quick", "kid_friendly"],
+    notes: "Perfect for busy mornings",
   },
   {
-    id: "2",
-    name: "John",
-    avatar_color: "blue",
-    dietary_preferences: ["High Protein", "No Seafood"],
-    allergies: [],
+    id: "meal-2",
+    name: "Grilled Chicken Salad",
+    ingredients: [
+      { name: "Chicken breast", quantity: 150, unit: "g" },
+      { name: "Mixed greens", quantity: 100, unit: "g" },
+      { name: "Cherry tomatoes", quantity: 50, unit: "g" },
+      { name: "Olive oil", quantity: 1, unit: "tbsp" },
+    ],
+    tags: ["lunch_dinner", "high_protein"],
   },
   {
-    id: "3",
-    name: "Emma",
-    avatar_color: "purple",
-    dietary_preferences: ["Vegetarian", "Loves Pasta"],
-    allergies: [],
+    id: "meal-3",
+    name: "Grilled Salmon with Asparagus",
+    ingredients: [
+      { name: "Salmon fillet", quantity: 200, unit: "g" },
+      { name: "Asparagus", quantity: 200, unit: "g" },
+      { name: "Lemon", quantity: 0.5, unit: "unit" },
+      { name: "Garlic", quantity: 2, unit: "unit" },
+    ],
+    tags: ["lunch_dinner", "high_protein"],
+  },
+  {
+    id: "meal-4",
+    name: "Avocado Toast",
+    ingredients: [
+      { name: "Whole wheat bread", quantity: 2, unit: "unit" },
+      { name: "Avocado", quantity: 1, unit: "unit" },
+      { name: "Eggs", quantity: 2, unit: "unit" },
+      { name: "Cherry tomatoes", quantity: 50, unit: "g", isOptional: true },
+    ],
+    tags: ["breakfast", "quick"],
+  },
+  {
+    id: "meal-5",
+    name: "Chicken Stir-Fry",
+    ingredients: [
+      { name: "Chicken breast", quantity: 200, unit: "g" },
+      { name: "Mixed vegetables", quantity: 300, unit: "g" },
+      { name: "Soy sauce", quantity: 2, unit: "tbsp" },
+      { name: "Ginger", quantity: 1, unit: "tsp" },
+    ],
+    tags: ["lunch_dinner", "quick", "kid_friendly"],
+  },
+  {
+    id: "meal-6",
+    name: "Quinoa Buddha Bowl",
+    ingredients: [
+      { name: "Quinoa", quantity: 100, unit: "g" },
+      { name: "Chickpeas", quantity: 150, unit: "g" },
+      { name: "Mixed vegetables", quantity: 200, unit: "g" },
+      { name: "Tahini", quantity: 2, unit: "tbsp" },
+    ],
+    tags: ["lunch_dinner", "vegetarian"],
+  },
+  {
+    id: "meal-7",
+    name: "Baked Cod with Broccoli",
+    ingredients: [
+      { name: "Cod fillet", quantity: 200, unit: "g" },
+      { name: "Broccoli", quantity: 200, unit: "g" },
+      { name: "Lemon", quantity: 0.5, unit: "unit" },
+      { name: "Olive oil", quantity: 1, unit: "tbsp" },
+    ],
+    tags: ["lunch_dinner", "high_protein"],
+  },
+  {
+    id: "meal-8",
+    name: "Scrambled Eggs with Veggies",
+    ingredients: [
+      { name: "Eggs", quantity: 3, unit: "unit" },
+      { name: "Spinach", quantity: 50, unit: "g" },
+      { name: "Cherry tomatoes", quantity: 50, unit: "g" },
+      { name: "Cheese", quantity: 30, unit: "g", isOptional: true },
+    ],
+    tags: ["breakfast", "quick", "high_protein"],
+  },
+  {
+    id: "meal-9",
+    name: "Turkey Wrap",
+    ingredients: [
+      { name: "Turkey slices", quantity: 100, unit: "g" },
+      { name: "Whole wheat tortilla", quantity: 1, unit: "unit" },
+      { name: "Lettuce", quantity: 50, unit: "g" },
+      { name: "Tomato", quantity: 1, unit: "unit" },
+    ],
+    tags: ["lunch_dinner", "quick"],
+  },
+  {
+    id: "meal-10",
+    name: "Beef Tacos",
+    ingredients: [
+      { name: "Ground beef", quantity: 200, unit: "g" },
+      { name: "Taco shells", quantity: 4, unit: "unit" },
+      { name: "Lettuce", quantity: 50, unit: "g" },
+      { name: "Cheese", quantity: 50, unit: "g" },
+      { name: "Salsa", quantity: 3, unit: "tbsp", isOptional: true },
+    ],
+    tags: ["lunch_dinner", "kid_friendly"],
   },
 ]
 
-// Mock family preferences
-export const mockFamilyPreferences: FamilyPreferences = {
-  id: "1",
-  preferences: [
-    "Kids are picky eaters",
-    "Prefers chicken over beef",
-    "Vegetarian options needed",
-    "No spicy food for kids",
-  ],
+// Mock weekly meals
+export const mockWeeklyMeals: WeeklyMeals = {
+  id: "weekly-1",
+  userId: "user-1",
+  weekStartDate: new Date().toISOString(),
+  meals: mockMeals,
+  summary: "Balanced meal plan with high protein and kid-friendly options",
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 }
 
-// Mock cooking habits
-export const mockCookingHabits: CookingHabits = {
-  id: "1",
-  habits: ["30-minute meals preferred", "Meal prep on Sundays", "Loves one-pot dishes", "Batch cooking friendly"],
-}
-
-// Mock meal plan
-export const mockMealPlan: Meal[] = [
-  // Monday
-  {
-    id: "m1",
-    name: "Greek Yogurt Bowl",
-    ingredients: "200g Greek yogurt, Mixed berries",
-    meal_type: "Breakfast",
-    day: "Monday",
-    image_query: "Greek Yogurt Bowl",
-  },
-  {
-    id: "m2",
-    name: "Grilled Chicken Salad",
-    ingredients: "150g Chicken breast, Mixed greens",
-    meal_type: "Lunch",
-    day: "Monday",
-    image_query: "Grilled Chicken Salad",
-  },
-  {
-    id: "m3",
-    name: "Grilled Salmon with Asparagus",
-    ingredients: "200g Salmon, 1 bunch Asparagus",
-    meal_type: "Dinner",
-    day: "Monday",
-    image_query: "Grilled Salmon with Asparagus",
-  },
-  // Tuesday
-  {
-    id: "m4",
-    name: "Avocado Toast",
-    ingredients: "2 slices bread, 1 Avocado",
-    meal_type: "Breakfast",
-    day: "Tuesday",
-    image_query: "Avocado Toast",
-  },
-  {
-    id: "m5",
-    name: "Quinoa Buddha Bowl",
-    ingredients: "1 cup Quinoa, Veggies",
-    meal_type: "Lunch",
-    day: "Tuesday",
-    image_query: "Quinoa Buddha Bowl",
-  },
-  {
-    id: "m6",
-    name: "Chicken Stir-Fry",
-    ingredients: "200g Chicken, Mixed vegetables",
-    meal_type: "Dinner",
-    day: "Tuesday",
-    image_query: "Chicken Stir-Fry",
-  },
-  // Wednesday
-  {
-    id: "m7",
-    name: "Protein Smoothie",
-    ingredients: "Protein powder, Banana, Spinach",
-    meal_type: "Breakfast",
-    day: "Wednesday",
-    image_query: "Protein Smoothie",
-  },
-  {
-    id: "m8",
-    name: "Turkey Wrap",
-    ingredients: "100g Turkey, Whole wheat wrap",
-    meal_type: "Lunch",
-    day: "Wednesday",
-    image_query: "Turkey Wrap",
-  },
-  {
-    id: "m9",
-    name: "Baked Cod with Broccoli",
-    ingredients: "200g Cod, 1 head Broccoli",
-    meal_type: "Dinner",
-    day: "Wednesday",
-    image_query: "Baked Cod with Broccoli",
-  },
-  // Thursday
-  {
-    id: "m10",
-    name: "Scrambled Eggs",
-    ingredients: "3 Eggs, Cherry tomatoes",
-    meal_type: "Breakfast",
-    day: "Thursday",
-    image_query: "Scrambled Eggs",
-  },
-  {
-    id: "m11",
-    name: "Lentil Soup",
-    ingredients: "1 cup Lentils, Vegetables",
-    meal_type: "Lunch",
-    day: "Thursday",
-    image_query: "Lentil Soup",
-  },
-  {
-    id: "m12",
-    name: "Beef Tacos",
-    ingredients: "200g Ground beef, Taco shells",
-    meal_type: "Dinner",
-    day: "Thursday",
-    image_query: "Beef Tacos",
-  },
-  // Friday
-  {
-    id: "m13",
-    name: "Oatmeal with Berries",
-    ingredients: "1 cup Oats, Mixed berries",
-    meal_type: "Breakfast",
-    day: "Friday",
-    image_query: "Oatmeal with Berries",
-  },
-  {
-    id: "m14",
-    name: "Caprese Sandwich",
-    ingredients: "Mozzarella, Tomatoes, Basil",
-    meal_type: "Lunch",
-    day: "Friday",
-    image_query: "Caprese Sandwich",
-  },
-  {
-    id: "m15",
-    name: "Shrimp Pasta",
-    ingredients: "200g Shrimp, Whole wheat pasta",
-    meal_type: "Dinner",
-    day: "Friday",
-    image_query: "Shrimp Pasta",
-  },
-  // Saturday
-  {
-    id: "m16",
-    name: "Pancakes",
-    ingredients: "Whole wheat flour, Eggs, Milk",
-    meal_type: "Breakfast",
-    day: "Saturday",
-    image_query: "Pancakes",
-  },
-  {
-    id: "m17",
-    name: "Chicken Caesar Salad",
-    ingredients: "150g Chicken, Romaine lettuce",
-    meal_type: "Lunch",
-    day: "Saturday",
-    image_query: "Chicken Caesar Salad",
-  },
-  {
-    id: "m18",
-    name: "Grilled Steak",
-    ingredients: "200g Steak, Sweet potato",
-    meal_type: "Dinner",
-    day: "Saturday",
-    image_query: "Grilled Steak",
-  },
-  // Sunday
-  {
-    id: "m19",
-    name: "French Toast",
-    ingredients: "2 slices bread, Eggs, Cinnamon",
-    meal_type: "Breakfast",
-    day: "Sunday",
-    image_query: "French Toast",
-  },
-  {
-    id: "m20",
-    name: "Veggie Pizza",
-    ingredients: "Pizza dough, Vegetables",
-    meal_type: "Lunch",
-    day: "Sunday",
-    image_query: "Veggie Pizza",
-  },
-  {
-    id: "m21",
-    name: "Roasted Chicken",
-    ingredients: "1 whole Chicken, Root vegetables",
-    meal_type: "Dinner",
-    day: "Sunday",
-    image_query: "Roasted Chicken",
-  },
+// Mock shopping list items
+const mockShoppingItems: ShoppingListItem[] = [
+  // Produce
+  { id: "s1", name: "Avocados", quantity: 2, unit: "unit", category: "Produce", checked: false },
+  { id: "s2", name: "Mixed berries", quantity: 300, unit: "g", category: "Produce", checked: false },
+  { id: "s3", name: "Asparagus", quantity: 400, unit: "g", category: "Produce", checked: false },
+  { id: "s4", name: "Broccoli", quantity: 400, unit: "g", category: "Produce", checked: false },
+  { id: "s5", name: "Cherry tomatoes", quantity: 300, unit: "g", category: "Produce", checked: false },
+  { id: "s6", name: "Mixed greens", quantity: 200, unit: "g", category: "Produce", checked: false },
+  { id: "s7", name: "Spinach", quantity: 100, unit: "g", category: "Produce", checked: false },
+  { id: "s8", name: "Lettuce", quantity: 200, unit: "g", category: "Produce", checked: false },
+  { id: "s9", name: "Lemon", quantity: 3, unit: "unit", category: "Produce", checked: false },
+  { id: "s10", name: "Garlic", quantity: 1, unit: "pack", category: "Produce", checked: false },
+  // Dairy & Eggs
+  { id: "s11", name: "Greek yogurt", quantity: 500, unit: "g", category: "Dairy & Eggs", checked: false },
+  { id: "s12", name: "Eggs", quantity: 12, unit: "unit", category: "Dairy & Eggs", checked: false },
+  { id: "s13", name: "Cheese", quantity: 200, unit: "g", category: "Dairy & Eggs", checked: false },
+  // Meat & Fish
+  { id: "s14", name: "Salmon fillet", quantity: 400, unit: "g", category: "Meat & Fish", checked: false },
+  { id: "s15", name: "Chicken breast", quantity: 800, unit: "g", category: "Meat & Fish", checked: false },
+  { id: "s16", name: "Cod fillet", quantity: 400, unit: "g", category: "Meat & Fish", checked: false },
+  { id: "s17", name: "Ground beef", quantity: 400, unit: "g", category: "Meat & Fish", checked: false },
+  { id: "s18", name: "Turkey slices", quantity: 200, unit: "g", category: "Meat & Fish", checked: false },
+  // Pantry
+  { id: "s19", name: "Quinoa", quantity: 200, unit: "g", category: "Pantry", checked: false },
+  { id: "s20", name: "Chickpeas", quantity: 300, unit: "g", category: "Pantry", checked: false },
+  { id: "s21", name: "Whole wheat bread", quantity: 1, unit: "pack", category: "Pantry", checked: false },
+  { id: "s22", name: "Whole wheat tortilla", quantity: 1, unit: "pack", category: "Pantry", checked: false },
+  { id: "s23", name: "Taco shells", quantity: 1, unit: "pack", category: "Pantry", checked: false },
+  { id: "s24", name: "Olive oil", quantity: 1, unit: "pack", category: "Pantry", checked: false },
+  { id: "s25", name: "Soy sauce", quantity: 1, unit: "pack", category: "Pantry", checked: false },
+  { id: "s26", name: "Tahini", quantity: 1, unit: "pack", category: "Pantry", checked: false },
 ]
 
 // Mock shopping list
-export const mockShoppingList: ShoppingItem[] = [
-  // Produce
-  { id: "s1", name: "Avocados", quantity: "2 units", category: "Produce", recipe: "Avocado Toast" },
-  { id: "s2", name: "Mixed Berries", quantity: "300g", category: "Produce", recipe: "Greek Yogurt Bowl" },
-  { id: "s3", name: "Asparagus", quantity: "1 bunch", category: "Produce", recipe: "Grilled Salmon" },
-  { id: "s4", name: "Broccoli", quantity: "1 head", category: "Produce", recipe: "Baked Cod" },
-  { id: "s5", name: "Cherry Tomatoes", quantity: "250g", category: "Produce", recipe: "Scrambled Eggs" },
-  { id: "s6", name: "Mixed Greens", quantity: "200g", category: "Produce", recipe: "Chicken Salad" },
-  { id: "s7", name: "Spinach", quantity: "100g", category: "Produce", recipe: "Protein Smoothie" },
-  { id: "s8", name: "Romaine Lettuce", quantity: "1 head", category: "Produce", recipe: "Caesar Salad" },
-  // Dairy & Eggs
-  { id: "s9", name: "Greek Yogurt", quantity: "500g", category: "Dairy & Eggs", recipe: "Yogurt Bowl" },
-  { id: "s10", name: "Eggs", quantity: "12 units", category: "Dairy & Eggs", recipe: "Multiple recipes" },
-  { id: "s11", name: "Mozzarella", quantity: "200g", category: "Dairy & Eggs", recipe: "Caprese Sandwich" },
-  { id: "s12", name: "Milk", quantity: "1L", category: "Dairy & Eggs", recipe: "Pancakes" },
-  // Meat & Fish
-  { id: "s13", name: "Salmon Fillets", quantity: "400g", category: "Meat & Fish", recipe: "Grilled Salmon" },
-  { id: "s14", name: "Chicken Breast", quantity: "800g", category: "Meat & Fish", recipe: "Multiple recipes" },
-  { id: "s15", name: "Cod Fillets", quantity: "400g", category: "Meat & Fish", recipe: "Baked Cod" },
-  { id: "s16", name: "Ground Beef", quantity: "400g", category: "Meat & Fish", recipe: "Beef Tacos" },
-  { id: "s17", name: "Shrimp", quantity: "400g", category: "Meat & Fish", recipe: "Shrimp Pasta" },
-  { id: "s18", name: "Turkey Slices", quantity: "200g", category: "Meat & Fish", recipe: "Turkey Wrap" },
-  { id: "s19", name: "Steak", quantity: "400g", category: "Meat & Fish", recipe: "Grilled Steak" },
-  { id: "s20", name: "Whole Chicken", quantity: "1 unit", category: "Meat & Fish", recipe: "Roasted Chicken" },
-  // Pantry
-  { id: "s21", name: "Quinoa", quantity: "500g", category: "Pantry", recipe: "Buddha Bowl" },
-  { id: "s22", name: "Lentils", quantity: "300g", category: "Pantry", recipe: "Lentil Soup" },
-  { id: "s23", name: "Whole Wheat Bread", quantity: "1 loaf", category: "Pantry", recipe: "Multiple recipes" },
-  { id: "s24", name: "Oats", quantity: "500g", category: "Pantry", recipe: "Oatmeal" },
-  { id: "s25", name: "Whole Wheat Pasta", quantity: "500g", category: "Pantry", recipe: "Shrimp Pasta" },
-  { id: "s26", name: "Taco Shells", quantity: "1 pack", category: "Pantry", recipe: "Beef Tacos" },
-  { id: "s27", name: "Pizza Dough", quantity: "1 unit", category: "Pantry", recipe: "Veggie Pizza" },
-]
+export const mockShoppingList: ShoppingList = {
+  id: "shopping-1",
+  userId: "user-1",
+  weekMealsId: "weekly-1",
+  items: mockShoppingItems,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+}
