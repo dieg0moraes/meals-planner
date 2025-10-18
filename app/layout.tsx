@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
+import { AuthProvider } from "@/components/auth-provider"
 
 import { Geist, Geist_Mono, Source_Serif_4, Geist as V0_Font_Geist, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
 
@@ -31,15 +32,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <SidebarProvider>
-          <AppSidebar />
-          <main className="flex-1 flex flex-col w-full">
-            <div className="border-b px-4 py-3 flex items-center">
-              <SidebarTrigger />
-            </div>
-            <div className="flex-1 overflow-auto">{children}</div>
-          </main>
-        </SidebarProvider>
+        <AuthProvider>
+          <SidebarProvider>
+            <AppSidebar />
+            <main className="flex-1 flex flex-col w-full">
+              <div className="border-b px-4 py-3 flex items-center">
+                <SidebarTrigger />
+              </div>
+              <div className="flex-1 overflow-auto">{children}</div>
+            </main>
+          </SidebarProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
