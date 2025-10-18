@@ -35,7 +35,7 @@ export interface UserProfile {
     displayName: string;
     locale?: string;
     timeZone?: string;
-    location: Address;
+    location?: Address;
     household: Household;
     dietaryRestrictions: string[];
     favoriteFoods?: string[];
