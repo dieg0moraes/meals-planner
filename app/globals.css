@@ -4,126 +4,124 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Simple food-oriented color palette: warm orange primary, fresh green accent, neutral grays */
+  /* Professional, sophisticated color palette for investor presentation */
 
-  /* Neutrals - warm off-white and soft grays */
-  --background: oklch(0.99 0.005 85);
-  --foreground: oklch(0.25 0.01 85);
+  /* Neutrals - ultra-clean whites and refined grays */
+  --background: oklch(0.995 0.001 85);
+  --foreground: oklch(0.15 0.01 265);
   --card: oklch(1.0 0 0);
-  --card-foreground: oklch(0.25 0.01 85);
+  --card-foreground: oklch(0.15 0.01 265);
   --popover: oklch(1.0 0 0);
-  --popover-foreground: oklch(0.25 0.01 85);
+  --popover-foreground: oklch(0.15 0.01 265);
 
-  /* Primary - warm appetizing orange/coral */
-  --primary: oklch(0.65 0.18 45);
+  /* Primary - sophisticated teal/cyan (professional, tech-forward) */
+  --primary: oklch(0.55 0.15 200);
   --primary-foreground: oklch(1.0 0 0);
 
-  /* Secondary - soft warm gray */
-  --secondary: oklch(0.95 0.01 85);
-  --secondary-foreground: oklch(0.35 0.01 85);
+  /* Secondary - soft slate */
+  --secondary: oklch(0.96 0.01 240);
+  --secondary-foreground: oklch(0.25 0.01 240);
 
-  /* Muted - light warm gray */
-  --muted: oklch(0.96 0.008 85);
-  --muted-foreground: oklch(0.5 0.01 85);
+  /* Muted - light cool gray */
+  --muted: oklch(0.97 0.003 240);
+  --muted-foreground: oklch(0.45 0.01 240);
 
-  /* Accent - fresh green for healthy/natural feel */
-  --accent: oklch(0.6 0.15 145);
-  --accent-foreground: oklch(1.0 0 0);
+  /* Accent - vibrant amber/gold (premium, energetic) */
+  --accent: oklch(0.65 0.16 60);
+  --accent-foreground: oklch(0.1 0.01 60);
 
-  /* Destructive - tomato red */
-  --destructive: oklch(0.6 0.22 25);
+  /* Destructive - refined red */
+  --destructive: oklch(0.58 0.22 25);
   --destructive-foreground: oklch(1.0 0 0);
 
+  /* Success - fresh green */
+  --success: oklch(0.6 0.15 145);
+  --success-foreground: oklch(1.0 0 0);
+
   /* Borders and inputs */
-  --border: oklch(0.9 0.01 85);
-  --input: oklch(0.9 0.01 85);
-  --ring: oklch(0.65 0.18 45);
+  --border: oklch(0.93 0.003 240);
+  --input: oklch(0.93 0.003 240);
+  --ring: oklch(0.55 0.15 200);
 
-  /* Chart colors - food-themed palette */
-  --chart-1: oklch(0.65 0.18 45);
-  --chart-2: oklch(0.6 0.15 145);
-  --chart-3: oklch(0.6 0.22 25);
-  --chart-4: oklch(0.7 0.12 85);
-  --chart-5: oklch(0.55 0.16 65);
+  /* Chart colors - professional palette */
+  --chart-1: oklch(0.55 0.15 200);
+  --chart-2: oklch(0.65 0.16 60);
+  --chart-3: oklch(0.6 0.15 145);
+  --chart-4: oklch(0.62 0.14 280);
+  --chart-5: oklch(0.58 0.18 340);
 
-  --radius: 0.5rem;
+  --radius: 0.875rem;
 
   /* Sidebar colors */
-  --sidebar: oklch(0.99 0.005 85);
-  --sidebar-foreground: oklch(0.25 0.01 85);
-  --sidebar-primary: oklch(0.65 0.18 45);
+  --sidebar: oklch(0.995 0.001 85);
+  --sidebar-foreground: oklch(0.15 0.01 265);
+  --sidebar-primary: oklch(0.55 0.15 200);
   --sidebar-primary-foreground: oklch(1.0 0 0);
-  --sidebar-accent: oklch(0.96 0.008 85);
-  --sidebar-accent-foreground: oklch(0.35 0.01 85);
-  --sidebar-border: oklch(0.9 0.01 85);
-  --sidebar-ring: oklch(0.65 0.18 45);
+  --sidebar-accent: oklch(0.97 0.003 240);
+  --sidebar-accent-foreground: oklch(0.25 0.01 240);
+  --sidebar-border: oklch(0.93 0.003 240);
+  --sidebar-ring: oklch(0.55 0.15 200);
 
   --shadow-x: 0px;
   --shadow-y: 1px;
-  --shadow-blur: 2px;
+  --shadow-blur: 3px;
   --shadow-spread: 0px;
   --shadow-opacity: 0.05;
-  --shadow-color: #000000;
+  --shadow-color: #1e293b;
 }
 
 .dark {
-  /* Dark mode with warm, appetizing tones */
+  /* Refined dark mode for professional presentation */
 
-  /* Neutrals - warm dark grays */
-  --background: oklch(0.15 0.01 85);
-  --foreground: oklch(0.95 0.01 85);
-  --card: oklch(0.18 0.015 85);
-  --card-foreground: oklch(0.95 0.01 85);
-  --popover: oklch(0.18 0.015 85);
-  --popover-foreground: oklch(0.95 0.01 85);
+  --background: oklch(0.12 0.01 240);
+  --foreground: oklch(0.97 0.003 240);
+  --card: oklch(0.15 0.012 240);
+  --card-foreground: oklch(0.97 0.003 240);
+  --popover: oklch(0.15 0.012 240);
+  --popover-foreground: oklch(0.97 0.003 240);
 
-  /* Primary - brighter warm orange for dark mode */
-  --primary: oklch(0.7 0.18 45);
-  --primary-foreground: oklch(0.15 0.01 85);
+  --primary: oklch(0.6 0.15 200);
+  --primary-foreground: oklch(0.98 0.001 200);
 
-  /* Secondary - medium warm gray */
-  --secondary: oklch(0.25 0.015 85);
-  --secondary-foreground: oklch(0.85 0.01 85);
+  --secondary: oklch(0.2 0.012 240);
+  --secondary-foreground: oklch(0.9 0.003 240);
 
-  /* Muted - dark warm gray */
-  --muted: oklch(0.22 0.015 85);
-  --muted-foreground: oklch(0.65 0.01 85);
+  --muted: oklch(0.18 0.012 240);
+  --muted-foreground: oklch(0.65 0.008 240);
 
-  /* Accent - vibrant green for dark mode */
-  --accent: oklch(0.65 0.15 145);
-  --accent-foreground: oklch(0.15 0.01 85);
+  --accent: oklch(0.7 0.16 60);
+  --accent-foreground: oklch(0.12 0.01 60);
 
-  /* Destructive - bright tomato red */
-  --destructive: oklch(0.65 0.22 25);
+  --destructive: oklch(0.62 0.22 25);
   --destructive-foreground: oklch(1.0 0 0);
 
-  /* Borders and inputs */
-  --border: oklch(0.3 0.015 85);
-  --input: oklch(0.3 0.015 85);
-  --ring: oklch(0.7 0.18 45);
+  --success: oklch(0.65 0.15 145);
+  --success-foreground: oklch(0.12 0.01 145);
 
-  /* Chart colors - food-themed palette for dark mode */
-  --chart-1: oklch(0.7 0.18 45);
-  --chart-2: oklch(0.65 0.15 145);
-  --chart-3: oklch(0.65 0.22 25);
-  --chart-4: oklch(0.75 0.12 85);
-  --chart-5: oklch(0.6 0.16 65);
+  --border: oklch(0.24 0.012 240);
+  --input: oklch(0.24 0.012 240);
+  --ring: oklch(0.6 0.15 200);
 
-  /* Sidebar colors */
-  --sidebar: oklch(0.18 0.015 85);
-  --sidebar-foreground: oklch(0.95 0.01 85);
-  --sidebar-primary: oklch(0.7 0.18 45);
-  --sidebar-primary-foreground: oklch(0.15 0.01 85);
-  --sidebar-accent: oklch(0.25 0.015 85);
-  --sidebar-accent-foreground: oklch(0.85 0.01 85);
-  --sidebar-border: oklch(0.3 0.015 85);
-  --sidebar-ring: oklch(0.7 0.18 45);
+  --chart-1: oklch(0.6 0.15 200);
+  --chart-2: oklch(0.7 0.16 60);
+  --chart-3: oklch(0.65 0.15 145);
+  --chart-4: oklch(0.67 0.14 280);
+  --chart-5: oklch(0.63 0.18 340);
+
+  --sidebar: oklch(0.15 0.012 240);
+  --sidebar-foreground: oklch(0.97 0.003 240);
+  --sidebar-primary: oklch(0.6 0.15 200);
+  --sidebar-primary-foreground: oklch(0.98 0.001 200);
+  --sidebar-accent: oklch(0.2 0.012 240);
+  --sidebar-accent-foreground: oklch(0.9 0.003 240);
+  --sidebar-border: oklch(0.24 0.012 240);
+  --sidebar-ring: oklch(0.6 0.15 200);
 
   --shadow-x: 0px;
-  --shadow-y: 1px;
-  --shadow-blur: 2px;
+  --shadow-y: 2px;
+  --shadow-blur: 8px;
   --shadow-spread: 0px;
-  --shadow-opacity: 0.05;
+  --shadow-opacity: 0.2;
   --shadow-color: #000000;
 }
 
@@ -201,5 +199,125 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  /* Professional, subtle animations for investor presentation */
+  @keyframes float-subtle {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-6px);
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+    }
+    50% {
+      box-shadow: 0 0 20px 2px rgba(59, 130, 246, 0.15);
+    }
+  }
+
+  @keyframes shimmer-professional {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  @keyframes slide-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-float-subtle {
+    animation: float-subtle 4s ease-in-out infinite;
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 3s ease-in-out infinite;
+  }
+
+  .animate-shimmer-professional {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 1000px 100%;
+    animation: shimmer-professional 3s infinite;
+  }
+
+  .animate-slide-up {
+    animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Refined hover effects for professional feel */
+  .hover-lift-subtle {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hover-lift-subtle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
+  }
+
+  .hover-scale-subtle {
+    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .hover-scale-subtle:hover {
+    transform: scale(1.02);
+  }
+
+  /* Glassmorphism effect for premium feel */
+  .glass-card {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .dark .glass-card {
+    background: rgba(30, 41, 59, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  /* Professional gradient text */
+  .gradient-text-primary {
+    background: linear-gradient(135deg, oklch(0.55 0.15 200), oklch(0.65 0.16 60));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .gradient-text-accent {
+    background: linear-gradient(135deg, oklch(0.65 0.16 60), oklch(0.6 0.15 145));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
   }
 }

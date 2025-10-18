@@ -269,5 +269,3 @@ Responde SOLO con la lista completa actualizada (exactamente ${count} elementos)
         notes: m.notes ?? undefined,
     }));
 }
-
-
