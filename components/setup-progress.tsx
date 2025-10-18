@@ -31,18 +31,29 @@ export function SetupProgress({ steps }: SetupProgressProps) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Progress value={progressPercentage} className="h-2" />
+        <Progress value={progressPercentage} className="h-2 transition-all duration-500" />
         <div className="space-y-2">
-          {steps.map((step) => (
-            <div key={step.id} className="flex items-center gap-3 text-sm">
+          {steps.map((step, index) => (
+            <div 
+              key={step.id} 
+              className="flex items-center gap-3 text-sm transition-all duration-300"
+            >
               {step.inProgress ? (
                 <Loader2 className="h-4 w-4 text-primary animate-spin flex-shrink-0" />
               ) : step.completed ? (
-                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
+                <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 animate-in zoom-in-50 duration-300" />
               ) : (
                 <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               )}
-              <span className={step.completed ? "text-foreground" : "text-muted-foreground"}>{step.label}</span>
+              <span 
+                className={`transition-all duration-300 ${
+                  step.completed 
+                    ? "text-foreground font-medium" 
+                    : "text-muted-foreground"
+                }`}
+              >
+                {step.label}
+              </span>
             </div>
           ))}
         </div>
