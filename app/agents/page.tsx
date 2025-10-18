@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { createBrowserClient } from "@/lib/supabase/client";
+import { useAuth } from "@/components/auth-provider";
+import type { Meal, WeeklyMeals } from "@/types";
 
 type ChatMessage = {
     role: "user" | "agent" | "system";
@@ -87,6 +89,7 @@ function ChatWindow(props: {
 }
 
 export default function AgentsPlaygroundPage() {
+    const { user } = useAuth();
     const [authUserId, setAuthUserId] = useState<string>("demo-user-1");
     const [profileId, setProfileId] = useState<string | null>(null);
     const [weekStartDate, setWeekStartDate] = useState<string>(computeNextMondayISO());
@@ -99,35 +102,12 @@ export default function AgentsPlaygroundPage() {
     // Planner chat state
     const [plannerMessages, setPlannerMessages] = useState<ChatMessage[]>([]);
     const [plannerInput, setPlannerInput] = useState<string>("");
+    const [weeklyMeals, setWeeklyMeals] = useState<WeeklyMeals | null>(null);
 
-    // Try to hydrate authUserId from current session; fallback to demo value
+    // Hydrate from auth context
     useEffect(() => {
-        const supabase = createBrowserClient();
-        let mounted = true;
-        (async () => {
-            const { data } = await supabase.auth.getUser();
-            if (mounted) {
-                if (data?.user?.id) {
-                    console.log("[agents] session detected on mount", data.user.id);
-                    setAuthUserId(data.user.id);
-                } else {
-                    console.log("[agents] no session on mount");
-                }
-            }
-        })();
-        const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
-            if (session?.user?.id) {
-                console.log("[agents] auth state:", event, session.user.id);
-                setAuthUserId(session.user.id);
-            } else {
-                console.log("[agents] auth state:", event, "no session");
-            }
-        });
-        return () => {
-            mounted = false;
-            sub.subscription.unsubscribe();
-        };
-    }, []);
+        if (user?.id) setAuthUserId(user.id);
+    }, [user?.id]);
 
     const handleSendOnboarding = useCallback(async () => {
         const text = onboardingInput.trim();
@@ -180,13 +160,17 @@ export default function AgentsPlaygroundPage() {
                 ...m,
                 { role: "agent", text: json.message || "Plan actualizado.", at: Date.now() },
             ]);
+            if (json.weeklyMeals) {
+                setWeeklyMeals(json.weeklyMeals as WeeklyMeals);
+                if (!profileId && json.weeklyMeals.user_id) setProfileId(json.weeklyMeals.user_id as string);
+            }
         } catch (err: any) {
             setPlannerMessages((m) => [
                 ...m,
                 { role: "system", text: err.message || "Error", at: Date.now() },
             ]);
         }
-    }, [profileId, plannerInput, weekStartDate]);
+    }, [profileId, plannerInput, weekStartDate, authUserId]);
 
     const header = useMemo(
         () => (
@@ -225,6 +209,95 @@ export default function AgentsPlaygroundPage() {
         [authUserId, profileId, weekStartDate]
     );
 
+    // Subscribe to weekly_meals changes for the selected profile/week
+    useEffect(() => {
+        const supabase = createBrowserClient();
+        let active = true;
+
+        async function ensureProfileId(): Promise<string | null> {
+            if (profileId) return profileId;
+            if (!authUserId) return null;
+            const { data } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("auth_user_id", authUserId)
+                .maybeSingle();
+            if (data?.id && active) setProfileId(data.id as string);
+            return (data?.id as string) ?? null;
+        }
+
+        async function run() {
+            if (!weekStartDate) return;
+            const pid = await ensureProfileId();
+            if (!pid) return;
+
+            const { data } = await supabase
+                .from("weekly_meals")
+                .select("*")
+                .eq("user_id", pid)
+                .eq("week_start_date", weekStartDate)
+                .maybeSingle();
+            if (active && data) setWeeklyMeals(data as unknown as WeeklyMeals);
+
+            const channel = supabase
+                .channel(`weekly_meals:${pid}`)
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'weekly_meals', filter: `user_id=eq.${pid}` },
+                    (payload) => {
+                        const row = (payload.new ?? payload.old) as any;
+                        if (!row) return;
+                        if (row.week_start_date === weekStartDate) {
+                            setWeeklyMeals(payload.new as unknown as WeeklyMeals);
+                        }
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+
+        let cleanup: (() => void) | undefined;
+        run().then((fn) => {
+            cleanup = fn as any;
+        });
+        return () => {
+            active = false;
+            if (cleanup) cleanup();
+        };
+    }, [profileId, authUserId, weekStartDate]);
+
+    function WeeklyMealsView({ plan }: { plan: WeeklyMeals }) {
+        const meals = (plan.meals ?? []) as Meal[];
+        const target = plan.targetMealsCount ?? meals.length;
+        return (
+            <Card className="mt-4 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Plan semanal</h3>
+                    <span className="text-sm text-muted-foreground">
+                        Objetivo: {target} · Actual: {meals.length}
+                    </span>
+                </div>
+                {meals.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sin comidas todavía.</p>
+                ) : (
+                    <ul className="space-y-2 text-sm">
+                        {meals.map((m, i) => (
+                            <li key={m.id ?? i} className="rounded border p-2">
+                                <div className="font-medium">{i + 1}. {m.name}</div>
+                                <div className="text-xs text-muted-foreground">
+                                    {m.ingredients?.length ?? 0} ingredientes · {m.tags?.join(', ') || 'sin tags'}
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Card>
+        );
+    }
+
     return (
         <div className="mx-auto w-full max-w-6xl p-4">
             {header}
@@ -245,6 +318,15 @@ export default function AgentsPlaygroundPage() {
                     onInputChange={setPlannerInput}
                     onSend={handleSendPlanner}
                 />
+                <div className="md:col-span-2">
+                    {weeklyMeals ? (
+                        <WeeklyMealsView plan={weeklyMeals} />
+                    ) : (
+                        <Card className="mt-4 p-4 text-sm text-muted-foreground">
+                            Conectando al plan semanal...
+                        </Card>
+                    )}
+                </div>
             </div>
         </div>
     );

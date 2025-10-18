@@ -7,6 +7,9 @@ export interface PlannerState {
     targetWeekStartDate: ISODateString;
     goals: string[];
     meals: Meal[]; // target ~10
+    targetMealsCount?: number; // desired number of meals for the plan
     feedback?: string;
+    history?: Array<{ role: "user" | "agent"; text: string; at: number }>;
+    phase?: "ask_count" | "plan" | "revise" | "final";
     done: boolean;
 }

@@ -78,6 +78,7 @@ export interface WeeklyMeals {
     userId: UUID;
     weekStartDate: ISODateString;
     meals: Meal[]; // target ~10
+    targetMealsCount?: number; // user-requested count to guide the agent/UI
     summary?: string;
     createdAt: ISODateString;
     updatedAt: ISODateString;

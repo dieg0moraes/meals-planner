@@ -1,30 +1,53 @@
-# meals-planner
+## Meals Planner – Hackathon MVP
 
-*Automatically synced with your [v0.app](https://v0.app) deployments*
+We are building a simple, B2C web app to help people in Latin America plan their weekly supermarket purchases. Today, most people buy ad‑hoc and end up overspending, wasting food, or missing essentials. Our MVP focuses on three steps:
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://vercel.com/dieg0moraes-projects/v0-meals-planner)
-[![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/projects/Yy68R5TYLWg)
+1) Onboarding with voice + AI
+- Capture household (personas y mascotas), restricciones, preferencias y objetivos (ahorrar dinero, más proteína, etc.)
+- Persistimos un `UserProfile` en Supabase (campos flexibles vía JSON)
 
-## Overview
+2) Plan semanal de 10 comidas
+- Agente conversacional (LangGraph) propone, recibe feedback, mejora y finaliza una lista de 10 comidas (sin fijar día/hora)
+- Guardamos el plan en `weekly_meals`
 
-This repository will stay in sync with your deployed chats on [v0.app](https://v0.app).
-Any changes you make to your deployed app will be automatically pushed to this repository from [v0.app](https://v0.app).
+3) Lista de compras
+- Convertimos el plan en una lista de ingredientes
+- Soportamos ingredientes opcionales (salsas, toppings, especias) que el usuario elige
 
-## Deployment
+Tecnologías
+- Next.js (App Router) + shadcn/ui
+- Supabase (auth con Google, DB, RLS) – JSON para prototipado rápido
+- OpenAI para extracción estructurada durante onboarding
+- LangGraph JS para el flujo iterativo del plan
 
-Your project is live at:
+Rutas clave
+- `/login`: Sign‑in con Google
+- `/agents`: Playground con 2 chats (Onboarding y Planificador)
+- API: `/api/onboarding/ingest` y `/api/planner/step`
 
-**[https://vercel.com/dieg0moraes-projects/v0-meals-planner](https://vercel.com/dieg0moraes-projects/v0-meals-planner)**
+Env necesarios (.env.local)
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `OPENAI_API_KEY`
 
-## Build your app
+Migraciones
+- Ver `migrations/0001_init.sql` y `0002_profiles_auth_unique.sql`
 
-Continue building your app on:
+Estado actual
+- Onboarding: parsing estructurado con Zod, upsert de `profiles` y flag `completed`. Usa nombre y userId de la sesión (Google)
+- Planner Agent (LangGraph):
+  - Pregunta por la cantidad de comidas si no está definida
+  - Genera el plan inicial con Structured Outputs (lista completa de comidas con ingredientes opcionales/marcados)
+  - Re‑escribe la lista completa ante instrucciones del usuario (p. ej. “cambiá la 3 por algo con pollo”)
+  - Persiste en `weekly_meals` (`meals`, `target_meals_count`, `summary`)
+- UI `/agents`:
+  - Dos chats (Onboarding y Planificador) y vista en vivo del plan
+  - Suscripción en tiempo real a `weekly_meals`
 
-**[https://v0.app/chat/projects/Yy68R5TYLWg](https://v0.app/chat/projects/Yy68R5TYLWg)**
+Objetivo demo
+- Llegar a la lista de compras final desde una conversación breve: crear perfil → definir 10 comidas → generar lista.
 
-## How It Works
-
-1. Create and modify your project using [v0.app](https://v0.app)
-2. Deploy your chats from the v0 interface
-3. Changes are automatically pushed to this repository
-4. Vercel deploys the latest version from this repository
+Próximos pasos
+- Ajustes finos de edición (agregar/eliminar también ajustando `target_meals_count`)
+- Generación de lista de compras desde el plan + edición
+- RLS/Policies limpias y seed minimal
