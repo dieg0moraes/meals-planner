@@ -1,14 +1,133 @@
+"use client"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { getUserProfiles, getFamilyPreferences, getCookingHabits } from "@/lib/data/queries"
+import { SetupProgress } from "@/components/setup-progress"
+import { useEffect, useState } from "react"
+import { createBrowserClient } from "@/lib/supabase/client"
+import type { UserProfile, FamilyPreferences, CookingHabits } from "@/lib/data/mock-data"
+import { mockUserProfiles, mockFamilyPreferences, mockCookingHabits } from "@/lib/data/mock-data"
 
-export default async function DashboardPage() {
-  const userProfiles = await getUserProfiles()
-  const familyPreferences = await getFamilyPreferences()
-  const cookingHabits = await getCookingHabits()
+export default function DashboardPage() {
+  const [userProfiles, setUserProfiles] = useState<UserProfile[]>(mockUserProfiles)
+  const [familyPreferences, setFamilyPreferences] = useState<FamilyPreferences>(mockFamilyPreferences)
+  const [cookingHabits, setCookingHabits] = useState<CookingHabits>(mockCookingHabits)
+  const [setupSteps, setSetupSteps] = useState([
+    { id: "profiles", label: "User profiles created", completed: true, inProgress: false },
+    { id: "dietary", label: "Dietary preferences added", completed: false, inProgress: false },
+    { id: "allergies", label: "Allergies documented", completed: false, inProgress: false },
+    { id: "family", label: "Family preferences set", completed: false, inProgress: false },
+    { id: "cooking", label: "Cooking habits configured", completed: false, inProgress: false },
+  ])
+
+  useEffect(() => {
+    const supabase = createBrowserClient()
+
+    // Subscribe to user profiles changes
+    const profilesChannel = supabase
+      .channel("user_profiles_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_profiles",
+        },
+        (payload) => {
+          console.log("[v0] User profile updated:", payload)
+          // Update local state with new data
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            setUserProfiles((prev) => {
+              const index = prev.findIndex((p) => p.id === payload.new.id)
+              if (index >= 0) {
+                const updated = [...prev]
+                updated[index] = payload.new as UserProfile
+                return updated
+              }
+              return [...prev, payload.new as UserProfile]
+            })
+            updateSetupProgress()
+          }
+        },
+      )
+      .subscribe()
+
+    // Subscribe to family preferences changes
+    const preferencesChannel = supabase
+      .channel("family_preferences_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "family_preferences",
+        },
+        (payload) => {
+          console.log("[v0] Family preferences updated:", payload)
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            setFamilyPreferences(payload.new as FamilyPreferences)
+            updateSetupProgress()
+          }
+        },
+      )
+      .subscribe()
+
+    // Subscribe to cooking habits changes
+    const habitsChannel = supabase
+      .channel("cooking_habits_changes")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "cooking_habits",
+        },
+        (payload) => {
+          console.log("[v0] Cooking habits updated:", payload)
+          if (payload.eventType === "INSERT" || payload.eventType === "UPDATE") {
+            setCookingHabits(payload.new as CookingHabits)
+            updateSetupProgress()
+          }
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(profilesChannel)
+      supabase.removeChannel(preferencesChannel)
+      supabase.removeChannel(habitsChannel)
+    }
+  }, [])
+
+  const updateSetupProgress = () => {
+    setSetupSteps((prev) => {
+      const updated = [...prev]
+
+      // Check if profiles exist
+      updated[0].completed = userProfiles.length > 0
+
+      // Check if dietary preferences are added
+      updated[1].completed = userProfiles.some((p) => p.dietary_preferences.length > 0)
+
+      // Check if allergies are documented
+      updated[2].completed = userProfiles.some((p) => p.allergies.length > 0)
+
+      // Check if family preferences are set
+      updated[3].completed = familyPreferences.preferences.length > 0
+
+      // Check if cooking habits are configured
+      updated[4].completed = cookingHabits.habits.length > 0
+
+      return updated
+    })
+  }
+
+  useEffect(() => {
+    updateSetupProgress()
+  }, [userProfiles, familyPreferences, cookingHabits])
 
   return (
     <div className="flex flex-col h-full">
@@ -20,6 +139,8 @@ export default async function DashboardPage() {
           </div>
 
           <div className="space-y-6">
+            <SetupProgress steps={setupSteps} />
+
             <div>
               <h2 className="text-xl font-semibold text-foreground mb-4">User Profiles</h2>
               <div className="flex gap-4 overflow-x-auto pb-2">
