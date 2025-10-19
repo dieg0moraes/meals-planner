@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
 import { useEffect, useState, memo } from "react"
@@ -22,9 +21,10 @@ import {
   CheckCircle2,
   Circle,
   Sparkles,
-  Calendar,
   TrendingUp,
-  PawPrint
+  PawPrint,
+  Trash2,
+  AlertTriangle
 } from "lucide-react"
 
 // Memoized widget component to prevent re-renders
@@ -61,6 +61,8 @@ export default function DashboardPage() {
   const [authUserId, setAuthUserId] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false)
+  const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
   const [setupSteps, setSetupSteps] = useState([
     { id: "profiles", label: "User profile created", completed: false, inProgress: false },
     { id: "household", label: "Household members added", completed: false, inProgress: false },
@@ -68,6 +70,31 @@ export default function DashboardPage() {
     { id: "preferences", label: "Food preferences added", completed: false, inProgress: false },
     { id: "goals", label: "Goals configured", completed: false, inProgress: false },
   ])
+
+  // Reset profile handler
+  const handleResetProfile = async () => {
+    setIsResetting(true)
+    try {
+      const response = await fetch('/api/onboarding/reset', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to reset profile')
+      }
+
+      // Refresh the page to reset state
+      window.location.reload()
+    } catch (error) {
+      console.error('Error resetting profile:', error)
+      alert(`Error al resetear el perfil: ${(error as Error).message}`)
+      setIsResetting(false)
+      setShowResetConfirm(false)
+    }
+  }
 
   // Get the authenticated user ID on mount
   useEffect(() => {
@@ -339,341 +366,277 @@ export default function DashboardPage() {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
-      <div className="flex-1 p-8 md:p-12 overflow-auto">
-        <div className="max-w-7xl mx-auto space-y-8">
+      <div className="flex-1 p-4 md:p-8 overflow-auto">
+        <div className="max-w-7xl mx-auto space-y-6">
 
-          {/* Header Section */}
-          <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold">Mi Perfil</h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {householdCount} miembros • {preferencesCount} preferencias • {completedCount}/{totalCount} completado
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowResetConfirm(true)}
+              className="text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          </div>
 
-            {/* Stats Overview */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Setup Progress</CardTitle>
-                  <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
+          {/* Reset Confirmation Dialog */}
+          {showResetConfirm && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+              <Card className="max-w-md w-full border-2 border-destructive/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="w-5 h-5" />
+                    Reset Profile
+                  </CardTitle>
+                  <CardDescription>
+                    This action cannot be undone. This will permanently delete your profile data.
+                  </CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-end gap-2">
-                      <span className="text-3xl font-bold">{completedCount}</span>
-                      <span className="text-muted-foreground mb-1">/ {totalCount}</span>
-                    </div>
-                    <Progress value={progressPercentage} className="h-2" />
-                    <p className="text-xs text-muted-foreground">
-                      {isOnboardingComplete ? "Profile complete!" : "Almost there!"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Household Size</CardTitle>
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="text-3xl font-bold">{householdCount + 1}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {householdCount > 0 ? "members total" : "Just you for now"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-                  <CardTitle className="text-sm font-medium">Food Preferences</CardTitle>
-                  <Heart className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="text-3xl font-bold">{preferencesCount}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {preferencesCount > 0 ? "preferences set" : "No preferences yet"}
-                    </p>
+                <CardContent className="space-y-4">
+                  <p className="text-sm text-muted-foreground">
+                    All your household information, food preferences, dietary restrictions, and goals will be removed.
+                  </p>
+                  <div className="flex gap-3 justify-end">
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowResetConfirm(false)}
+                      disabled={isResetting}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={handleResetProfile}
+                      disabled={isResetting}
+                    >
+                      {isResetting ? "Resetting..." : "Yes, Reset Profile"}
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
-          </div>
+          )}
 
-          {/* Setup Progress Card - Only show if not complete */}
+          {/* Setup Progress Banner - Only if incomplete */}
           {!isOnboardingComplete && (
-            <Card className="border-2 border-primary/20 bg-card/50 backdrop-blur">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-primary" />
-                  Complete Your Profile
-                </CardTitle>
-                <CardDescription>
-                  Let's finish setting up to unlock personalized meal plans
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Progress value={progressPercentage} className="h-2" />
-                <div className="grid gap-2 md:grid-cols-2">
-                  {setupSteps.map((step) => (
-                    <div key={step.id} className="flex items-center gap-3 text-sm p-2 rounded-lg hover:bg-muted/50 transition-colors">
-                      {step.completed ? (
-                        <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0" />
-                      ) : (
-                        <Circle className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      )}
-                      <span className={step.completed ? "text-foreground font-medium" : "text-muted-foreground"}>
-                        {step.label}
-                      </span>
-                    </div>
-                  ))}
+            <Card className="border-l-4 border-l-primary bg-primary/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Sparkles className="w-5 h-5 text-primary flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Complete tu perfil para desbloquear planes personalizados</p>
+                    <Progress value={progressPercentage} className="h-1.5 mt-2" />
+                  </div>
+                  <span className="text-sm font-semibold text-primary">{completedCount}/{totalCount}</span>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Tabs Section */}
-          <Tabs defaultValue="household" className="space-y-6">
-            <TabsList className="grid w-full max-w-md grid-cols-3">
-              <TabsTrigger value="household" className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Household
-              </TabsTrigger>
-              <TabsTrigger value="preferences" className="flex items-center gap-2">
-                <Heart className="w-4 h-4" />
-                Preferences
-              </TabsTrigger>
-              <TabsTrigger value="goals" className="flex items-center gap-2">
-                <Target className="w-4 h-4" />
-                Goals
-              </TabsTrigger>
-            </TabsList>
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Household Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold">Household</h2>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {/* Household members - all from LLM data */}
+                {(userProfile.household?.people || []).map((person) => {
+                  const isPrimary = person.role === "self" || person.role === "user";
 
-            {/* Household Tab */}
-            <TabsContent value="household" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {/* Main user card */}
-                <Card className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
-                  <CardHeader>
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <Avatar className="h-12 w-12 border-2 border-primary/20 group-hover:border-primary transition-colors">
-                          <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-bold text-lg">
-                            {userProfile.displayName?.[0]?.toUpperCase() || "U"}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground rounded-full p-1">
-                          <User className="w-3 h-3" />
+                  return (
+                    <Card key={person.id} className="border hover:border-primary/50 transition-all">
+                      <CardContent className="p-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <Avatar className={`h-10 w-10 border ${isPrimary ? 'border-primary/20' : 'border-blue-200'}`}>
+                            <AvatarFallback className={isPrimary
+                              ? "bg-primary/10 text-primary font-bold"
+                              : "bg-blue-50 text-blue-700 font-bold"
+                            }>
+                              {isPrimary && userProfile.displayName
+                                ? userProfile.displayName[0]?.toUpperCase()
+                                : person.role[0].toUpperCase()
+                              }
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm capitalize truncate">
+                              {isPrimary ? (userProfile.displayName || "You") : person.role}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {isPrimary ? "Primary" : "Member"}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="truncate">{userProfile.displayName || "User"}</CardTitle>
-                        <CardDescription>You (Primary)</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {(userProfile.dietaryRestrictions || []).length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">Dietary Restrictions</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {(userProfile.dietaryRestrictions || []).map((restriction) => (
-                            <Badge key={restriction} variant="outline" className="text-xs border-destructive/50 text-destructive">
-                              {restriction}
-                            </Badge>
-                          ))}
+                        <div className="flex gap-2 flex-wrap">
+                          {person.estimatedAge && (
+                            <Badge variant="secondary" className="text-xs">{person.estimatedAge} años</Badge>
+                          )}
+                          {person.gender && (
+                            <Badge variant="secondary" className="text-xs capitalize">{person.gender}</Badge>
+                          )}
                         </div>
-                      </div>
-                    )}
-                    {(userProfile.goals || []).length > 0 && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground mb-2">Goals</p>
-                        <div className="flex flex-wrap gap-1.5">
-                          {(userProfile.goals || []).map((goal) => (
-                            <Badge key={goal} variant="outline" className="text-xs border-primary/50 text-primary">
-                              {goal}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                {/* Household members */}
-                {(userProfile.household?.people || []).map((person) => (
-                  <Card key={person.id} className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
-                    <CardHeader>
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-blue-200 group-hover:border-blue-400 transition-colors">
-                          <AvatarFallback className="bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 font-bold text-lg">
-                            {person.role[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <CardTitle className="capitalize truncate">{person.role}</CardTitle>
-                          <CardDescription>Family Member</CardDescription>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {person.estimatedAge && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">Age:</span>
-                          <span className="font-medium">{person.estimatedAge}</span>
-                        </div>
-                      )}
-                      {person.gender && (
-                        <Badge variant="secondary" className="capitalize">
-                          {person.gender}
-                        </Badge>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
 
                 {/* Pets */}
                 {(userProfile.household?.pets || []).map((pet) => (
-                  <Card key={pet.id} className="border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-lg group">
-                    <CardHeader>
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-amber-200 group-hover:border-amber-400 transition-colors">
-                          <AvatarFallback className="bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700">
-                            <PawPrint className="w-6 h-6" />
+                  <Card key={pet.id} className="border hover:border-primary/50 transition-all">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        <Avatar className="h-10 w-10 border border-amber-200">
+                          <AvatarFallback className="bg-amber-50 text-amber-700">
+                            <PawPrint className="w-5 h-5" />
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <CardTitle className="truncate">{pet.name || `Our ${pet.animal}`}</CardTitle>
-                          <CardDescription>Pet</CardDescription>
+                          <p className="font-semibold text-sm truncate">{pet.name || `${pet.animal}`}</p>
+                          <p className="text-xs text-muted-foreground">Pet</p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Badge variant="secondary" className="capitalize bg-amber-50 text-amber-700 border-amber-200">
+                      <Badge variant="secondary" className="text-xs capitalize bg-amber-50 text-amber-700 border-amber-200">
                         {pet.animal}
                       </Badge>
                     </CardContent>
                   </Card>
                 ))}
               </div>
-            </TabsContent>
+            </div>
 
-            {/* Preferences Tab */}
-            <TabsContent value="preferences" className="space-y-4">
-              <div className="grid gap-6 lg:grid-cols-2">
-                <Card className="border-2 hover:border-primary/50 transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <Heart className="w-5 h-5 text-green-600" />
-                      Favorite Foods
-                    </CardTitle>
-                    <CardDescription>
-                      Foods you love and want to see more often
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+            {/* Preferences Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Heart className="w-5 h-5 text-primary" />
+                <h2 className="text-lg font-bold">Food Preferences</h2>
+              </div>
+              <div className="space-y-3">
+                <Card className="border hover:border-primary/50 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Heart className="w-4 h-4 text-green-600" />
+                      <h3 className="font-semibold text-sm">Favorites</h3>
+                    </div>
                     {userProfile.favoriteFoods && userProfile.favoriteFoods.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {userProfile.favoriteFoods.map((food) => (
-                          <Badge key={food} className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
-                            <Heart className="w-3 h-3 mr-1 fill-current" />
+                          <Badge key={food} className="bg-green-50 text-green-700 border-green-200 text-xs">
                             {food}
                           </Badge>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <Heart className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                        <p className="text-sm">No favorite foods yet</p>
-                        <p className="text-xs mt-1">Chat with us to add your favorites!</p>
-                      </div>
+                      <p className="text-xs text-muted-foreground">No favorites yet</p>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="border-2 hover:border-primary/50 transition-all duration-300">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <X className="w-5 h-5 text-red-600" />
-                      Disliked Foods
-                    </CardTitle>
-                    <CardDescription>
-                      Foods to avoid in your meal plans
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
+                <Card className="border hover:border-primary/50 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <X className="w-4 h-4 text-red-600" />
+                      <h3 className="font-semibold text-sm">Dislikes</h3>
+                    </div>
                     {userProfile.dislikedFoods && userProfile.dislikedFoods.length > 0 ? (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-1.5">
                         {userProfile.dislikedFoods.map((food) => (
-                          <Badge key={food} className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
-                            <X className="w-3 h-3 mr-1" />
+                          <Badge key={food} className="bg-red-50 text-red-700 border-red-200 text-xs">
                             {food}
                           </Badge>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-center py-8 text-muted-foreground">
-                        <X className="w-12 h-12 mx-auto mb-3 opacity-20" />
-                        <p className="text-sm">No disliked foods</p>
-                        <p className="text-xs mt-1">You're easy to please!</p>
-                      </div>
+                      <p className="text-xs text-muted-foreground">No dislikes</p>
                     )}
+                  </CardContent>
+                </Card>
+
+                <Card className="border hover:border-primary/50 transition-all">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle className="w-4 h-4 text-orange-600" />
+                      <h3 className="font-semibold text-sm">Restrictions</h3>
+                    </div>
+                    {(() => {
+                      const restrictions = userProfile.dietaryRestrictions?.filter(r => r.toLowerCase() !== 'ninguna') || [];
+                      const hasNone = userProfile.dietaryRestrictions?.some(r => r.toLowerCase() === 'ninguna');
+
+                      if (restrictions.length > 0) {
+                        return (
+                          <div className="flex flex-wrap gap-1.5">
+                            {restrictions.map((restriction) => (
+                              <Badge key={restriction} className="bg-orange-50 text-orange-700 border-orange-200 text-xs">
+                                {restriction}
+                              </Badge>
+                            ))}
+                          </div>
+                        );
+                      } else if (hasNone) {
+                        return <p className="text-xs text-muted-foreground">Sin restricciones</p>;
+                      } else {
+                        return <p className="text-xs text-muted-foreground">No restrictions</p>;
+                      }
+                    })()}
                   </CardContent>
                 </Card>
               </div>
-            </TabsContent>
+            </div>
+          </div>
 
-            {/* Goals Tab */}
-            <TabsContent value="goals" className="space-y-4">
-              <Card className="border-2 hover:border-primary/50 transition-all duration-300">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-xl">
-                    <Target className="w-5 h-5 text-primary" />
-                    Your Meal Planning Goals
-                  </CardTitle>
-                  <CardDescription>
-                    What you want to achieve with your meal planning
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {userProfile.goals && userProfile.goals.length > 0 ? (
-                    <div className="grid gap-3 md:grid-cols-2">
-                      {userProfile.goals.map((goal) => (
-                        <div key={goal} className="flex items-center gap-3 p-4 rounded-lg border-2 hover:border-primary/50 transition-colors bg-card">
-                          <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <TrendingUp className="w-5 h-5 text-primary" />
-                          </div>
-                          <span className="font-medium">{goal}</span>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Target className="w-16 h-16 mx-auto mb-4 opacity-20" />
-                      <p className="text-sm">No goals set yet</p>
-                      <p className="text-xs mt-1">Tell us what you want to achieve!</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
+          {/* Goals Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold">Goals</h2>
+            </div>
+            <Card className="border hover:border-primary/50 transition-all">
+              <CardContent className="p-4">
+                {userProfile.goals && userProfile.goals.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {userProfile.goals.map((goal) => (
+                      <Badge key={goal} variant="outline" className="border-primary/50 text-primary text-xs">
+                        <Target className="w-3 h-3 mr-1" />
+                        {goal}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground">No goals set yet</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
           {/* CTA Section */}
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-primary/3 to-transparent mb-24">
-            <CardContent className="flex flex-col items-center justify-center gap-6 pt-6 text-center">
-              <div>
-                <h3 className="text-2xl font-bold mb-2">Ready to start planning?</h3>
-                <p className="text-muted-foreground">
-                  {isOnboardingComplete
-                    ? "Your profile is complete! Generate your personalized meal plan now."
-                    : "Complete your profile setup to unlock personalized meal planning."}
-                </p>
+          <Card className="border border-primary/20 bg-gradient-to-r from-primary/5 to-transparent mb-20">
+            <CardContent className="p-4">
+              <div className="flex flex-col items-center justify-center gap-4 text-center">
+                <div>
+                  <h3 className="font-semibold mb-1">¿Listo para planificar?</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isOnboardingComplete
+                      ? "Tu perfil está completo. Genera tu plan personalizado."
+                      : "Completa tu perfil para desbloquear planes personalizados."}
+                  </p>
+                </div>
+                <Link href="/meal-plan">
+                  <Button className="shadow-md">
+                    <ChefHat className="w-4 h-4 mr-2" />
+                    Ver Plan
+                  </Button>
+                </Link>
               </div>
-              <Link href="/meal-plan">
-                <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
-                  <ChefHat className="w-5 h-5 mr-2" />
-                  View Meal Plan
-                </Button>
-              </Link>
             </CardContent>
           </Card>
         </div>

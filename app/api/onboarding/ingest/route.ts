@@ -21,86 +21,100 @@ function isProfileComplete(p: UserProfile): boolean {
     const hasLocation = Boolean(p.location?.countryCode && p.location?.city);
     const hasFavorite = (p.favoriteFoods?.length ?? 0) > 0;
     const hasDisliked = (p.dislikedFoods?.length ?? 0) > 0;
+    const hasDietaryRestrictions = (p.dietaryRestrictions?.length ?? 0) > 0; // "ninguna" cuenta como válido
     return (
         hasDisplayName &&
         hasAtLeastOnePerson &&
         hasAtLeastOneGoal &&
         hasLocation &&
         hasFavorite &&
-        hasDisliked
+        hasDisliked &&
+        hasDietaryRestrictions
     );
 }
 
-const COMMON_EXTRACTION_RULES = `
-IMPORTANT CONTEXT:
-- The person speaking is ALWAYS the user themselves
-- When the user says "I live alone", "it's just me", "solo yo", etc., add ONE person to the household (the user)
-- The user is always part of the household - include them in the people array with role "self" or "user"
-- When counting household members, the user counts as one person
-- If the user says "I live with my brother", that's TWO people total: the user + brother
-- If the user says "we are 3 in the house", that includes the user, so add 3 people total
+const EXTRACTION_RULES = `
+REGLAS DE EXTRACCIÓN:
+1. El usuario SIEMPRE es parte del hogar (rol "usuario")
+2. "Vivo solo" = 1 persona (el usuario). "Vivo con mi hermano" = 2 personas (usuario + hermano)
+3. Solo agrega info cuando esté 100% clara. Si hay duda, omite
+4. Mascotas: solo cuando digan "mi perro", "mi gato", etc. NO agregues nombres ambiguos
 
-STRICT RULES - ONLY add information when COMPLETELY CLEAR:
-- If it's ambiguous whether someone is a person or pet (e.g., "Brunito", "Luna"), DO NOT add them at all
-- Only add pets when explicitly stated (e.g., "my dog", "mi gato", "my cat Brunito")
-- Only add people when the relationship is clear (e.g., "my brother", "mi novia", "my wife")
-- If you're not 100% sure about any field value, OMIT it completely
-- Better to collect less information than to collect wrong information
-- Do NOT guess or infer - only extract what is explicitly stated
+DIFERENCIA CRÍTICA - dietaryRestrictions vs goals:
+• dietaryRestrictions = DIETAS, ALERGIAS, RESTRICCIONES ALIMENTARIAS
+  Ejemplos: "vegetariano", "vegano", "sin gluten", "sin lactosa", "antiinflamatorio", "kosher", "halal", "sin azúcar"
+  ⚠️ Si el usuario dice que NO tiene restricciones → usar ["ninguna"]
+  
+• goals = OBJETIVOS del planificador (NO son dietas)
+  Ejemplos: "bajar de peso", "ahorrar dinero", "comer más saludable", "más variedad", "ahorrar tiempo"
 
-IMPORTANT - explanationOfChanges field:
-You MUST provide a clear, conversational explanation in the "explanationOfChanges" field that describes:
-- What information was successfully extracted and added/updated
-- What information was omitted and WHY (ambiguous, unclear, not enough context)
-- Any contradictions found and how they were resolved
-- Use the SAME LANGUAGE as the user's input (if they speak Spanish, respond in Spanish)
-- Be specific with examples (e.g., "Omití 'Brunito' porque no está claro si es una persona o mascota")
-- Keep it concise but informative (1-2 sentences max)
-`;
+⚠️ IMPORTANTE:
+- "Soy vegetariano" → dietaryRestrictions (NO goals)
+- "Quiero ser vegetariano" → dietaryRestrictions and goals 
+- "Sigo dieta antiinflamatoria" → dietaryRestrictions (NO goals)
+- "Quiero bajar de peso" → goals (NO dietaryRestrictions)
+- "No tengo restricciones" → dietaryRestrictions: ["ninguna"]
+- "Como de todo" → dietaryRestrictions: ["ninguna"]
 
-const INITIAL_EXTRACTION_EXAMPLES = `
-Examples of CORRECT extraction:
-- "I live alone" → 1 person with role "self"
-- "I live with my girlfriend" → 2 people: role "self" + role "girlfriend"
-- "We are 4: me, my wife and two kids" → 4 people total
-- "Just me and my dog" → 1 person (role "self") + 1 pet (animal "dog")
-- "I have a dog named Bruno" → 1 pet (animal "dog", name "Bruno")
-
-Examples of cases to OMIT (ambiguous):
-- "I live with Brunito" → OMIT Brunito (unclear if person or pet)
-- "Luna is with me" → OMIT Luna (unclear if person or pet)
-- "I like pasta" → Add to favoriteFoods ONLY if context is about food preferences
+CAMPO explanationOfChanges (un agente de voz leerá esto):
+- Escribe en el idioma del usuario, natural y breve (1-2 oraciones)
+- Ejemplo: "Perfecto, agregué a tu hermano al hogar"
+- NO uses términos técnicos ni JSON
 `;
 
 function buildSystemPrompt(existingData: any | null): string {
     if (existingData) {
-        return `You are updating user onboarding details for a weekly meal planner.
-Current user data: ${JSON.stringify(existingData, null, 2)}
+        return `Actualizas el perfil de un planificador de comidas.
+Datos actuales: ${JSON.stringify(existingData, null, 2)}
 
-${COMMON_EXTRACTION_RULES}
+${EXTRACTION_RULES}
 
-${INITIAL_EXTRACTION_EXAMPLES}
+ACTUALIZACIÓN DE DATOS - MUY IMPORTANTE:
+⚠️ SIEMPRE retorna el perfil COMPLETO con TODOS los arrays existentes
 
-UPDATING EXISTING DATA:
-- Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new)
-- If new info contradicts existing data, prefer the new information
-- If new info adds to existing data (e.g., new favorite foods), merge both. THIS IS CRITICAL, DONT LOSE ANY INFORMATION
-- Always return ALL fields, not just the updated ones
-- Maintain the user in household.people with role "self" unless they explicitly say otherwise`;
+REGLAS CRÍTICAS:
+1. Si el usuario menciona comidas favoritas → Retorna favoriteFoods COMPLETO Y dislikedFoods COMPLETO Y dietaryRestrictions COMPLETO
+2. Si el usuario menciona comidas que NO le gustan → Retorna dislikedFoods COMPLETO Y favoriteFoods COMPLETO Y dietaryRestrictions COMPLETO  
+3. Si el usuario menciona restricciones → Retorna dietaryRestrictions COMPLETO Y favoriteFoods COMPLETO Y dislikedFoods COMPLETO
+4. Si el usuario menciona personas/mascotas → Retorna household.people COMPLETO Y household.pets COMPLETO
+5. Si el usuario menciona goals → Retorna goals COMPLETO Y todos los demás arrays COMPLETOS
+6. NUNCA omitas arrays que no se mencionan - SIEMPRE inclúyelos completos
+
+Ejemplos CORRECTOS:
+Usuario: "Me gusta el pollo"
+→ Retornar TODO: { 
+    favoriteFoods: [...viejas, "pollo"], 
+    dislikedFoods: [...viejas completas], 
+    dietaryRestrictions: [...viejas completas],
+    goals: [...viejas completas],
+    household: { people: [...viejas], pets: [...viejas] }
+}
+
+Usuario: "No me gusta la cebolla"  
+→ Retornar TODO: { 
+    dislikedFoods: [...viejas, "cebolla"], 
+    favoriteFoods: [...viejas completas],
+    dietaryRestrictions: [...viejas completas], 
+    goals: [...viejas completas],
+    household: { people: [...viejas], pets: [...viejas] }
+}
+
+⚠️ ERRORES CRÍTICOS A EVITAR:
+❌ Retornar solo el campo mencionado → DEBES retornar TODOS los campos
+❌ Retornar arrays vacíos [] cuando hay datos viejos → DEBES preservar datos viejos`;
     }
 
-    return `You extract user onboarding details for a weekly meal planner.
+    return `Extraes datos de onboarding para un planificador de comidas.
 
-${COMMON_EXTRACTION_RULES}
+${EXTRACTION_RULES}
 
-${INITIAL_EXTRACTION_EXAMPLES}
-
-Return only the structured fields. If unsure, omit.`;
+Retorna solo campos estructurados. Si hay duda, omite.`;
 }
 
 export async function POST(req: NextRequest) {
     try {
-        const { authUserId, new_info } = (await req.json()) as {
+        const body = await req.json();
+        const { authUserId, new_info } = body as {
             authUserId?: string;
             new_info: string;
         };
@@ -156,23 +170,50 @@ export async function POST(req: NextRequest) {
             .maybeSingle();
         if (pErr) throw new Error(pErr.message);
 
-        const prev = (existing as any) as UserProfile | null;
+        // Map snake_case to camelCase
+        const prev: UserProfile | null = existing ? {
+            id: existing.id,
+            authUserId: existing.auth_user_id,
+            displayName: existing.display_name || "",
+            locale: existing.locale,
+            timeZone: existing.time_zone,
+            location: existing.location,
+            household: existing.household || { people: [], pets: [] },
+            dietaryRestrictions: existing.dietary_restrictions || [],
+            favoriteFoods: existing.favorite_foods || [],
+            dislikedFoods: existing.disliked_foods || [],
+            goals: existing.goals || [],
+            createdAt: existing.created_at,
+            updatedAt: existing.updated_at,
+            rawOnboarding: existing.raw_onboarding,
+        } : null;
 
         // 2) Extract and merge new info with existing data using LLM
         const model = new ChatOpenAI({
-            model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+            model: "gpt-4.1",
             temperature: 0
         });
         const extractor = model.withStructuredOutput(AgentOnboardingInputSchema);
 
         // Prepare context with existing data
-        const existingData = prev ? {
-            displayName: prev.displayName,
-            household: prev.household,
-            dietaryRestrictions: prev.dietaryRestrictions,
-            favoriteFoods: prev.favoriteFoods,
-            dislikedFoods: prev.dislikedFoods,
-            goals: prev.goals,
+        // Only treat as existing if we actually have some meaningful data
+        const existingData = prev && (
+            prev.household?.people?.length ||
+            prev.household?.pets?.length ||
+            prev.dietaryRestrictions?.length ||
+            prev.favoriteFoods?.length ||
+            prev.dislikedFoods?.length ||
+            prev.goals?.length
+        ) ? {
+            displayName: prev.displayName || "",
+            household: {
+                people: prev.household?.people || [],
+                pets: prev.household?.pets || []
+            },
+            dietaryRestrictions: prev.dietaryRestrictions || [],
+            favoriteFoods: prev.favoriteFoods || [],
+            dislikedFoods: prev.dislikedFoods || [],
+            goals: prev.goals || [],
         } : null;
 
         const systemPrompt = buildSystemPrompt(existingData);
@@ -197,17 +238,18 @@ export async function POST(req: NextRequest) {
             }
         );
 
-        // 3) Build final profile from LLM output (LLM already merged everything)
+        // 3) Build final profile from LLM output
         const nowIso = new Date().toISOString();
 
-        // Add IDs to people and pets from LLM response
-        const peopleWithIds: Person[] = (parsed.household?.people ?? []).map((p) => ({
+        // Add IDs to people and pets
+        const peopleWithIds: Person[] = (parsed.household?.people || []).map((p: any) => ({
             id: generateId(),
             gender: p.gender ?? undefined,
             estimatedAge: p.estimatedAge ?? undefined,
             role: p.role,
         }));
-        const petsWithIds: Pet[] = (parsed.household?.pets ?? []).map((p) => ({
+
+        const petsWithIds: Pet[] = (parsed.household?.pets || []).map((p: any) => ({
             id: generateId(),
             animal: p.animal,
             name: p.name ?? null,
@@ -216,7 +258,7 @@ export async function POST(req: NextRequest) {
         const merged: UserProfile = {
             id: prev?.id ?? generateId(),
             authUserId: resolvedAuthUserId!,
-            displayName: displayNameFromAuth ?? parsed.displayName ?? "",
+            displayName: displayNameFromAuth ?? parsed.displayName ?? prev?.displayName ?? "usuario",
             locale: prev?.locale,
             timeZone: FIXED_TIME_ZONE,
             location: FIXED_LOCATION,
@@ -224,10 +266,10 @@ export async function POST(req: NextRequest) {
                 people: peopleWithIds,
                 pets: petsWithIds,
             },
-            dietaryRestrictions: parsed.dietaryRestrictions ?? [],
-            favoriteFoods: parsed.favoriteFoods ?? [],
-            dislikedFoods: parsed.dislikedFoods ?? [],
-            goals: parsed.goals ?? [],
+            dietaryRestrictions: parsed.dietaryRestrictions || [],
+            favoriteFoods: parsed.favoriteFoods || [],
+            dislikedFoods: parsed.dislikedFoods || [],
+            goals: parsed.goals || [],
             createdAt: prev?.createdAt ?? nowIso,
             updatedAt: nowIso,
             rawOnboarding: { ...(prev?.rawOnboarding ?? {}), lastNewInfo: new_info },
@@ -261,15 +303,27 @@ export async function POST(req: NextRequest) {
         const profile = (saved as any) as UserProfile;
         const completed = isProfileComplete(merged);
 
+        // Build manual response string with XML tags for voice agent
+        const responseText = `<tool_response>${JSON.stringify({
+            hasRequiredInfo: completed,
+            message: parsed.explanationOfChanges
+        })}</tool_response>`;
+
         return NextResponse.json({
-            profile: merged,
-            completed,
-            explanation: parsed.explanationOfChanges
+            response: responseText
         });
     } catch (err) {
+        const errorResponse = `<tool_response>${JSON.stringify({
+            hasRequiredInfo: false,
+            message: "Lo siento, hubo un error al procesar tu información. ¿Podrías intentarlo de nuevo?"
+        })}</tool_response>`;
+
         return NextResponse.json(
-            { error: (err as Error).message ?? "Onboarding ingest failed" },
-            { status: 400 }
+            {
+                error: (err as Error).message ?? "Onboarding ingest failed",
+                response: errorResponse
+            },
+            { status: 500 }
         );
     }
 }
