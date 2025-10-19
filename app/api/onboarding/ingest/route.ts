@@ -29,6 +29,7 @@ function isProfileComplete(p: UserProfile): boolean {
         hasFavorite &&
         hasDisliked
     );
+
 }
 
 export async function POST(req: NextRequest) {
