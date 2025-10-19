@@ -18,7 +18,7 @@ const EntitiesContext = createContext<EntitiesContextValue>({
     weeklyMeals: null,
     shoppingList: null,
     loading: true,
-    refresh: async () => {},
+    refresh: async () => { },
 });
 
 export function useEntities() {
@@ -88,43 +88,108 @@ export function EntitiesProvider({ children }: { children: React.ReactNode }) {
         fetchAll();
     }, [authLoading, fetchAll]);
 
-    // Realtime subscriptions
+    // Realtime subscriptions - subscribe early using user.id, then filter by profile.id when available
     useEffect(() => {
         const supabase = createBrowserClient();
         let active = true;
-        if (!profile?.id) return;
+        if (!user?.id) return;
 
-        const weeklyChannel = supabase
-            .channel(`weekly_meals:${profile.id}`)
+        console.log('[entities-provider] Setting up realtime subscriptions for user:', user.id);
+
+        // Subscribe to profiles table to catch updates
+        const profileChannel = supabase
+            .channel(`profiles:${user.id}`)
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'weekly_meals', filter: `user_id=eq.${profile.id}` },
+                { event: '*', schema: 'public', table: 'profiles', filter: `auth_user_id=eq.${user.id}` },
                 (payload) => {
+                    console.log('[entities-provider] Profile update received:', payload);
                     if (!active) return;
-                    const row = (payload.new ?? payload.old) as any;
-                    if (payload.new) setWeeklyMeals(payload.new as WeeklyMeals);
+                    if (payload.new) {
+                        const p = payload.new as any;
+                        const updatedProfile: UserProfile = {
+                            id: p.id,
+                            authUserId: p.auth_user_id,
+                            displayName: p.display_name || "",
+                            locale: p.locale || undefined,
+                            timeZone: p.time_zone || undefined,
+                            location: p.location || undefined,
+                            household: p.household || { people: [], pets: [] },
+                            dietaryRestrictions: p.dietary_restrictions || [],
+                            favoriteFoods: p.favorite_foods || [],
+                            dislikedFoods: p.disliked_foods || [],
+                            goals: p.goals || [],
+                            createdAt: p.created_at,
+                            updatedAt: p.updated_at,
+                            rawOnboarding: p.raw_onboarding || undefined,
+                        };
+                        setProfile(updatedProfile);
+                    }
                 }
             )
             .subscribe();
 
-        const listChannel = supabase
-            .channel(`shopping_lists:${profile.id}`)
+        // Subscribe to weekly_meals - initially no filter, then filter by profile.id in callback
+        const weeklyChannel = supabase
+            .channel(`weekly_meals:${user.id}`)
             .on(
                 'postgres_changes',
-                { event: '*', schema: 'public', table: 'shopping_lists', filter: `user_id=eq.${profile.id}` },
-                (payload) => {
+                { event: '*', schema: 'public', table: 'weekly_meals' },
+                async (payload) => {
+                    console.log('[entities-provider] Weekly meals update received:', payload);
                     if (!active) return;
-                    if (payload.new) setShoppingList(payload.new as ShoppingList);
+
+                    // Get current profile to check if this update is for us
+                    const { data: currentProfile } = await supabase
+                        .from("profiles")
+                        .select("id")
+                        .eq("auth_user_id", user.id)
+                        .maybeSingle();
+
+                    if (!currentProfile) return;
+
+                    const row = payload.new as any;
+                    if (row && row.user_id === currentProfile.id) {
+                        setWeeklyMeals(row as WeeklyMeals);
+                    }
+                }
+            )
+            .subscribe();
+
+        // Subscribe to shopping_lists - initially no filter, then filter by profile.id in callback
+        const listChannel = supabase
+            .channel(`shopping_lists:${user.id}`)
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public', table: 'shopping_lists' },
+                async (payload) => {
+                    console.log('[entities-provider] Shopping list update received:', payload);
+                    if (!active) return;
+
+                    // Get current profile to check if this update is for us
+                    const { data: currentProfile } = await supabase
+                        .from("profiles")
+                        .select("id")
+                        .eq("auth_user_id", user.id)
+                        .maybeSingle();
+
+                    if (!currentProfile) return;
+
+                    const row = payload.new as any;
+                    if (row && row.user_id === currentProfile.id) {
+                        setShoppingList(row as ShoppingList);
+                    }
                 }
             )
             .subscribe();
 
         return () => {
             active = false;
+            supabase.removeChannel(profileChannel);
             supabase.removeChannel(weeklyChannel);
             supabase.removeChannel(listChannel);
         };
-    }, [profile?.id]);
+    }, [user?.id]);
 
     const value = useMemo(
         () => ({ profile, weeklyMeals, shoppingList, loading, refresh: fetchAll }),

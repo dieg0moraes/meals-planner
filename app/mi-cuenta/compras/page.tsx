@@ -115,15 +115,15 @@ export default function MiListaComprasPage() {
     const isListEmpty = (shoppingList?.items?.length ?? 0) === 0
     if (hasMeals && isListEmpty) {
       kickoffDoneRef.current = true
-      ;(async () => {
-        try {
-          setLoading(true)
-          await fetch('/api/shopping-list/kickoff', { method: 'POST' })
-        } catch {}
-        finally { setLoading(false) }
-      })()
+        ; (async () => {
+          try {
+            setLoading(true)
+            await fetch('/api/shopping-list/kickoff', { method: 'POST' })
+          } catch { }
+          finally { setLoading(false) }
+        })()
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shoppingList?.items?.length, weeklyMeals?.meals?.length])
   return (
     <div>
@@ -179,7 +179,7 @@ export default function MiListaComprasPage() {
       {items.length === 0 ? (
         <Card className="p-4 text-sm text-muted-foreground">No hay items aún.</Card>
       ) : (
-        <div className={`space-y-3 transition-all ${listFlash ? 'animate-slide-up' : ''}`}> 
+        <div className={`space-y-3 transition-all ${listFlash ? 'animate-slide-up' : ''}`}>
           {items.map((it, i) => {
             const key = it.id || `${it.name}-${i}`
             const isChecked = !!it.checked
