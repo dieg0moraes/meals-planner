@@ -8,25 +8,32 @@ import { useFlashOnChange } from "@/hooks/use-flash-on-change"
 import { ShoppingCartModal } from "@/components/shopping-cart-modal"
 import type { ShoppingListItem } from "@/types"
 import type { ShoppingCart, SearchResponse, OptimizeResponse, OptimizeError } from "@/types/products"
-import { useState } from "react"
-import { ShoppingCart as ShoppingCartIcon, Loader2 } from "lucide-react"
+import { ShoppingCart as ShoppingCartIcon, Loader2, RefreshCw } from "lucide-react"
+import { useEffect, useRef, useState } from "react"
+import { useApplication } from "@/components/application-provider"
 
 export default function MiListaComprasPage() {
-  const { shoppingList } = useEntities()
+  const { shoppingList, weeklyMeals } = useEntities()
   const items = (shoppingList?.items ?? []) as ShoppingListItem[]
   const listFlash = useFlashOnChange(JSON.stringify(items.map(it => ({ id: it.id, name: it.name, q: it.quantity, u: it.unit }))))
   const [checked, setChecked] = useState<Record<string, boolean>>({})
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const [carts, setCarts] = useState<ShoppingCart[]>([])
   const [modalOpen, setModalOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const handleFindProducts = async () => {
+  const handleFindProducts = async (forceRefresh = false) => {
     if (items.length === 0) {
       return
     }
 
-    setLoading(true)
+    // Si ya tenemos carts y no es un refresh forzado, solo abrimos el modal
+    if (carts.length > 0 && !forceRefresh) {
+      setModalOpen(true)
+      return
+    }
+
+    setLoading(true);
     setError(null)
 
     try {
@@ -36,7 +43,7 @@ export default function MiListaComprasPage() {
       const searchPromises = items.map(async (item) => {
         const response = await fetch(`/api/products/search?q=${encodeURIComponent(item.name)}`)
         const data: SearchResponse = await response.json()
-        
+
         return {
           ingredient: item.name,
           quantity: item.quantity,
@@ -60,7 +67,7 @@ export default function MiListaComprasPage() {
       })
 
       const optimizeData: OptimizeResponse | OptimizeError = await optimizeResponse.json()
-      
+
       if (!optimizeData.success) {
         throw new Error('message' in optimizeData ? optimizeData.message : 'Error al optimizar')
       }
@@ -73,10 +80,29 @@ export default function MiListaComprasPage() {
       console.error('[compras] Error:', err)
       setError(err instanceof Error ? err.message : 'Error desconocido')
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
+  const kickoffDoneRef = useRef(false)
+  const { setLoading } = useApplication()
+
+  useEffect(() => {
+    if (kickoffDoneRef.current) return
+    const hasMeals = (weeklyMeals?.meals?.length ?? 0) > 0
+    const isListEmpty = (shoppingList?.items?.length ?? 0) === 0
+    if (hasMeals && isListEmpty) {
+      kickoffDoneRef.current = true
+      ;(async () => {
+        try {
+          setLoading(true)
+          await fetch('/api/shopping-list/kickoff', { method: 'POST' })
+        } catch {}
+        finally { setLoading(false) }
+      })()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shoppingList?.items?.length, weeklyMeals?.meals?.length])
   return (
     <div>
       <div className="mb-6 flex items-start justify-between gap-4">
@@ -85,24 +111,40 @@ export default function MiListaComprasPage() {
           <p className="text-sm text-muted-foreground">Tus items actuales para esta semana</p>
         </div>
         {items.length > 0 && (
-          <Button 
-            onClick={handleFindProducts} 
-            disabled={loading}
-            size="lg"
-            className="shrink-0"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Buscando...
-              </>
-            ) : (
-              <>
-                <ShoppingCartIcon className="mr-2 h-4 w-4" />
-                Buscar Productos
-              </>
+          <div className="flex gap-2 shrink-0">
+            <Button
+              onClick={() => handleFindProducts(false)}
+              disabled={loading}
+              size="lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Buscando...
+                </>
+              ) : carts.length > 0 ? (
+                <>
+                  <ShoppingCartIcon className="mr-2 h-4 w-4" />
+                  Ver Carritos
+                </>
+              ) : (
+                <>
+                  <ShoppingCartIcon className="mr-2 h-4 w-4" />
+                  Buscar Productos
+                </>
+              )}
+            </Button>
+            {carts.length > 0 && !loading && (
+              <Button
+                onClick={() => handleFindProducts(true)}
+                disabled={loading}
+                size="lg"
+                variant="outline"
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
             )}
-          </Button>
+          </div>
         )}
       </div>
 
@@ -142,10 +184,10 @@ export default function MiListaComprasPage() {
         </div>
       )}
 
-      <ShoppingCartModal 
-        open={modalOpen} 
-        onOpenChange={setModalOpen} 
-        carts={carts} 
+      <ShoppingCartModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        carts={carts}
       />
     </div>
   )

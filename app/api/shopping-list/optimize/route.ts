@@ -51,6 +51,67 @@ function tryParseJson<T>(text: string): T {
 }
 
 /**
+ * Estima precios para productos de Tienda Inglesa que no tienen precio.
+ * Toma el precio más barato de otros supermercados y le suma un random entre 10 y 20.
+ */
+function fixTiendaInglesaPrices(carts: any[], ingredientsWithProducts: any[]): any[] {
+  // Encontrar el carrito de Tienda Inglesa
+  const tiendaInglesaCart = carts.find(cart => cart.store === 'tienda-inglesa');
+  
+  if (!tiendaInglesaCart || !tiendaInglesaCart.items) {
+    console.log('[optimize-api] No hay carrito de Tienda Inglesa');
+    return carts;
+  }
+
+  console.log(`[optimize-api] 🔧 Procesando precios de Tienda Inglesa...`);
+  
+  // Procesar cada item de Tienda Inglesa
+  tiendaInglesaCart.items.forEach((item: any) => {
+    const product = item.product;
+    
+    // Si el producto no tiene precio o es 0
+    if (!product.priceNumeric || product.priceNumeric === 0) {
+      console.log(`[optimize-api] 💰 Producto sin precio: "${product.name}"`);
+      
+      // Buscar los productos de este ingrediente en los datos originales
+      const ingredientData = ingredientsWithProducts.find(
+        (ing: any) => ing.ingredient === item.ingredient
+      );
+      
+      if (ingredientData && ingredientData.products) {
+        // Obtener precios de otros supermercados (no Tienda Inglesa)
+        const otherPrices = ingredientData.products
+          .filter((p: Product) => 
+            p.store !== 'tienda-inglesa' && 
+            p.priceNumeric !== null && 
+            p.priceNumeric > 0
+          )
+          .map((p: Product) => p.priceNumeric as number);
+        
+        if (otherPrices.length > 0) {
+          // Encontrar el precio más barato
+          const cheapestPrice = Math.min(...otherPrices);
+          
+          // Sumar un random entre 10 y 20
+          const randomExtra = Math.floor(Math.random() * 21) + 20; // 10 a 20 inclusive
+          const estimatedPrice = cheapestPrice + randomExtra;
+          
+          // Actualizar el producto
+          product.priceNumeric = Math.round(estimatedPrice * 100) / 100;
+          product.price = `$ ${product.priceNumeric.toFixed(2).replace('.', ',')}`;
+          
+          console.log(`[optimize-api] ✅ Precio estimado para "${product.name}": $${product.priceNumeric} (basado en $${cheapestPrice} + $${randomExtra})`);
+        } else {
+          console.warn(`[optimize-api] ⚠️ No se encontraron precios de otros supermercados para "${item.ingredient}"`);
+        }
+      }
+    }
+  });
+  
+  return carts;
+}
+
+/**
  * POST /api/shopping-list/optimize
  * 
  * Recibe una lista de ingredientes con sus productos encontrados
@@ -130,8 +191,11 @@ IMPORTANTE:
       );
     }
 
+    // Procesar precios de Tienda Inglesa que faltan
+    const cartsWithFixedPrices = fixTiendaInglesaPrices(parsed.carts || [], ingredientsWithProducts);
+
     // Calcular totales
-    const carts: ShoppingCart[] = (parsed.carts || []).map((cart: any) => {
+    const carts: ShoppingCart[] = cartsWithFixedPrices.map((cart: any) => {
       const total = cart.items.reduce((sum: number, item: any) => {
         return sum + (item.product?.priceNumeric || 0);
       }, 0);

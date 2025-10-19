@@ -46,16 +46,7 @@ export interface UserProfile {
     rawOnboarding?: Record<string, unknown>;
 }
 
-export type Unit =
-    | "unit"
-    | "g"
-    | "kg"
-    | "ml"
-    | "l"
-    | "tbsp"
-    | "tsp"
-    | "cup"
-    | "pack";
+export type Unit = string; // simplify: accept free-form units (e.g., "g", "kg", "clove", "unidad")
 
 export interface IngredientQuantity {
     name: string;
