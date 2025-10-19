@@ -7,7 +7,7 @@ async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<str
   const modelName = "gpt-4.1";
   const model = new ChatOpenAI({
     model: modelName,
-    temperature: 0.3,
+    temperature: 0,
   });
 
   console.log("[optimize-api] calling OpenAI with LangSmith tracing", { 
