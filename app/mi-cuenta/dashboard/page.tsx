@@ -668,7 +668,7 @@ export default function DashboardPage() {
                     : "Complete your profile setup to unlock personalized meal planning."}
                 </p>
               </div>
-              <Link href="/meal-plan">
+              <Link href="/mi-cuenta/comidas">
                 <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
                   <ChefHat className="w-5 h-5 mr-2" />
                   View Meal Plan
