@@ -19,7 +19,7 @@ import { useAuth } from "@/components/auth-provider"
 const menuItems = [
   {
     title: "Dashboard",
-    url: "/dashboard",
+    url: "/mi-cuenta/dashboard",
     icon: LayoutDashboard,
   },
   {

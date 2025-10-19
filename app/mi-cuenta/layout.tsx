@@ -27,6 +27,11 @@ function FloatingAgentChat() {
   const [input, setInput] = useState("")
   const [isOpen, setIsOpen] = useState(false)
 
+  // Hide floating chat on dashboard
+  if (pathname?.startsWith("/mi-cuenta/dashboard")) {
+    return null
+  }
+
   const handleSend = useCallback(async () => {
     const text = input.trim()
     if (!text) return

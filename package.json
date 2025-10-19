@@ -13,6 +13,8 @@
     "@langchain/core": "latest",
     "@langchain/langgraph": "latest",
     "@langchain/openai": "latest",
+    "axios": "^1.6.2",
+    "cheerio": "^1.0.0-rc.12",
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -69,6 +71,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.9",
+    "@types/cheerio": "^0.22.35",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

@@ -29,6 +29,7 @@ function isProfileComplete(p: UserProfile): boolean {
         hasFavorite &&
         hasDisliked
     );
+
 }
 
 export async function POST(req: NextRequest) {
@@ -38,16 +39,43 @@ export async function POST(req: NextRequest) {
             new_info: string;
         };
 
-        if (!authUserId || !new_info) {
-            return NextResponse.json({ error: "Missing authUserId or new_info" }, { status: 400 });
+        if (!new_info) {
+            return NextResponse.json({ error: "Missing new_info" }, { status: 400 });
         }
 
         const supabase = await createSupabaseServerClient();
 
-        // Prefer the authenticated session user to identify and name the profile
+        // Check if this is an agent request (has API key) or a user request (has session)
+        const apiKey = req.headers.get("x-agent-api-key") || req.headers.get("authorization")?.replace("Bearer ", "");
+        const isAgentRequest = apiKey === process.env.AGENT_API_KEY;
+
+        // Get authUserId from header (set by ElevenLabs widget) or body
+        const headerAuthUserId = req.headers.get("x-user-id");
+        const finalAuthUserId = headerAuthUserId || authUserId;
+
+        // Get authenticated session user
         const { data: authData } = await supabase.auth.getUser();
         const sessionUser = authData?.user ?? null;
-        const resolvedAuthUserId = sessionUser?.id ?? authUserId;
+
+        // Determine the auth user ID
+        let resolvedAuthUserId: string | null = null;
+
+        if (isAgentRequest) {
+            // Agent request: use header or body authUserId
+            resolvedAuthUserId = finalAuthUserId || null;
+            if (!resolvedAuthUserId) {
+                return NextResponse.json({ error: "Agent requests must provide authUserId (via header x-user-id or body)" }, { status: 400 });
+            }
+        } else {
+            // User request: prefer session user, fallback to provided authUserId
+            resolvedAuthUserId = sessionUser?.id ?? finalAuthUserId ?? null;
+        }
+
+        if (!resolvedAuthUserId) {
+            return NextResponse.json({
+                error: "Authentication required. Provide a valid session or API key with authUserId"
+            }, { status: 401 });
+        }
         const displayNameFromAuth =
             (sessionUser?.user_metadata as any)?.full_name ||
             (sessionUser?.user_metadata as any)?.name ||

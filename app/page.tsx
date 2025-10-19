@@ -7,7 +7,7 @@ export default async function Home() {
   const supabase = await createSupabaseServerClient()
   const { data } = await supabase.auth.getUser()
   if (data?.user) {
-    redirect("/dashboard")
+    redirect("/mi-cuenta/dashboard")
   }
   return (
     <div className="min-h-[calc(100vh-56px)] w-full bg-black text-white">
