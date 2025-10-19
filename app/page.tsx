@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { redirect } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { createClient as createSupabaseServerClient } from "@/lib/supabase/server"
@@ -15,6 +16,16 @@ export default async function Home() {
       <section className="relative overflow-hidden">
         <div className="absolute inset-0 pointer-events-none -z-10 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-green-600/20 via-green-500/10 to-transparent" />
         <div className="mx-auto max-w-4xl px-6 py-16 md:py-20 min-h-[70vh] flex flex-col items-center justify-center text-center">
+          <div className="mb-6">
+            <Image
+              src="/hero_logo.png"
+              alt="Carritoo"
+              width={320}
+              height={96}
+              priority
+              className="rounded-2xl"
+            />
+          </div>
           <h1 className="text-4xl md:text-6xl font-extrabold leading-tight tracking-tight">
             Planificá tus comidas. Comprá mejor. Ahorrá más.
           </h1>
