@@ -64,11 +64,11 @@ export default function DashboardPage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
   const [setupSteps, setSetupSteps] = useState([
-    { id: "profiles", label: "User profile created", completed: false, inProgress: false },
-    { id: "household", label: "Household members added", completed: false, inProgress: false },
-    { id: "dietary", label: "Dietary restrictions set", completed: false, inProgress: false },
-    { id: "preferences", label: "Food preferences added", completed: false, inProgress: false },
-    { id: "goals", label: "Goals configured", completed: false, inProgress: false },
+    { id: "profiles", label: "Perfil de usuario creado", completed: false, inProgress: false },
+    { id: "household", label: "Miembros del hogar agregados", completed: false, inProgress: false },
+    { id: "dietary", label: "Restricciones dietéticas establecidas", completed: false, inProgress: false },
+    { id: "preferences", label: "Preferencias de comida agregadas", completed: false, inProgress: false },
+    { id: "goals", label: "Objetivos configurados", completed: false, inProgress: false },
   ])
 
   // Reset profile handler
@@ -300,44 +300,44 @@ export default function DashboardPage() {
               </div>
 
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent mb-4">
-                Welcome to MealPlanner
+                Bienvenido a MealPlanner
               </h1>
 
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl leading-relaxed">
-                Your AI-powered culinary companion is ready to help you plan delicious,
-                personalized meals tailored just for you.
+                Tu asistente culinario con IA está listo para ayudarte a planificar comidas
+                deliciosas y personalizadas diseñadas especialmente para ti.
               </p>
 
               <Card className="max-w-2xl w-full bg-card/50 backdrop-blur border-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-xl">
                     <Sparkles className="w-5 h-5 text-primary" />
-                    Let's Get Started
+                    Comencemos
                   </CardTitle>
                   <CardDescription>
-                    Chat with our AI assistant below to set up your profile
+                    Chatea con nuestro asistente de IA abajo para configurar tu perfil
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-3 text-left">
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Share your household details</p>
-                      <p className="text-sm text-muted-foreground">Tell us who you're cooking for</p>
+                      <p className="font-medium">Comparte los detalles de tu hogar</p>
+                      <p className="text-sm text-muted-foreground">Cuéntanos para quién estás cocinando</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Set dietary preferences</p>
-                      <p className="text-sm text-muted-foreground">Any restrictions or favorite foods?</p>
+                      <p className="font-medium">Establece tus preferencias dietéticas</p>
+                      <p className="text-sm text-muted-foreground">¿Alguna restricción o comida favorita?</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                     <div>
-                      <p className="font-medium">Define your goals</p>
-                      <p className="text-sm text-muted-foreground">Health, budget, variety, or time-saving?</p>
+                      <p className="font-medium">Define tus objetivos</p>
+                      <p className="text-sm text-muted-foreground">¿Salud, presupuesto, variedad o ahorro de tiempo?</p>
                     </div>
                   </div>
                 </CardContent>
@@ -345,7 +345,7 @@ export default function DashboardPage() {
 
               <p className="mt-8 text-muted-foreground flex items-center gap-2">
                 <span className="text-2xl">👇</span>
-                Start chatting below to begin your culinary journey
+                Comienza a chatear abajo para iniciar tu viaje culinario
               </p>
             </div>
           </div>
@@ -394,15 +394,15 @@ export default function DashboardPage() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-destructive">
                     <AlertTriangle className="w-5 h-5" />
-                    Reset Profile
+                    Resetear Perfil
                   </CardTitle>
                   <CardDescription>
-                    This action cannot be undone. This will permanently delete your profile data.
+                    Esta acción no se puede deshacer. Esto eliminará permanentemente los datos de tu perfil.
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <p className="text-sm text-muted-foreground">
-                    All your household information, food preferences, dietary restrictions, and goals will be removed.
+                    Toda la información de tu hogar, preferencias de comida, restricciones dietéticas y objetivos serán eliminados.
                   </p>
                   <div className="flex gap-3 justify-end">
                     <Button
@@ -410,14 +410,14 @@ export default function DashboardPage() {
                       onClick={() => setShowResetConfirm(false)}
                       disabled={isResetting}
                     >
-                      Cancel
+                      Cancelar
                     </Button>
                     <Button
                       variant="destructive"
                       onClick={handleResetProfile}
                       disabled={isResetting}
                     >
-                      {isResetting ? "Resetting..." : "Yes, Reset Profile"}
+                      {isResetting ? "Reseteando..." : "Sí, Resetear Perfil"}
                     </Button>
                   </div>
                 </CardContent>
@@ -447,7 +447,7 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Users className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-bold">Household</h2>
+                <h2 className="text-lg font-bold">Hogar</h2>
               </div>
               <div className="grid gap-3 md:grid-cols-2">
                 {/* Household members - all from LLM data */}
@@ -471,10 +471,10 @@ export default function DashboardPage() {
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <p className="font-semibold text-sm capitalize truncate">
-                              {isPrimary ? (userProfile.displayName || "You") : person.role}
+                              {isPrimary ? (userProfile.displayName || "Tú") : person.role}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {isPrimary ? "Primary" : "Member"}
+                              {isPrimary ? "Principal" : "Miembro"}
                             </p>
                           </div>
                         </div>
@@ -503,7 +503,7 @@ export default function DashboardPage() {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate">{pet.name || `${pet.animal}`}</p>
-                          <p className="text-xs text-muted-foreground">Pet</p>
+                          <p className="text-xs text-muted-foreground">Mascota</p>
                         </div>
                       </div>
                       <Badge variant="secondary" className="text-xs capitalize bg-amber-50 text-amber-700 border-amber-200">
@@ -519,14 +519,14 @@ export default function DashboardPage() {
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <Heart className="w-5 h-5 text-primary" />
-                <h2 className="text-lg font-bold">Food Preferences</h2>
+                <h2 className="text-lg font-bold">Preferencias de Comida</h2>
               </div>
               <div className="space-y-3">
                 <Card className="border hover:border-primary/50 transition-all">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <Heart className="w-4 h-4 text-green-600" />
-                      <h3 className="font-semibold text-sm">Favorites</h3>
+                      <h3 className="font-semibold text-sm">Favoritos</h3>
                     </div>
                     {userProfile.favoriteFoods && userProfile.favoriteFoods.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
@@ -537,7 +537,7 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">No favorites yet</p>
+                      <p className="text-xs text-muted-foreground">No hay favoritos aún</p>
                     )}
                   </CardContent>
                 </Card>
@@ -546,7 +546,7 @@ export default function DashboardPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <X className="w-4 h-4 text-red-600" />
-                      <h3 className="font-semibold text-sm">Dislikes</h3>
+                      <h3 className="font-semibold text-sm">No me gusta</h3>
                     </div>
                     {userProfile.dislikedFoods && userProfile.dislikedFoods.length > 0 ? (
                       <div className="flex flex-wrap gap-1.5">
@@ -557,7 +557,7 @@ export default function DashboardPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-muted-foreground">No dislikes</p>
+                      <p className="text-xs text-muted-foreground">No hay alimentos que no te gusten</p>
                     )}
                   </CardContent>
                 </Card>
@@ -566,7 +566,7 @@ export default function DashboardPage() {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <AlertTriangle className="w-4 h-4 text-orange-600" />
-                      <h3 className="font-semibold text-sm">Restrictions</h3>
+                      <h3 className="font-semibold text-sm">Restricciones</h3>
                     </div>
                     {(() => {
                       const restrictions = userProfile.dietaryRestrictions?.filter(r => r.toLowerCase() !== 'ninguna') || [];
@@ -585,7 +585,7 @@ export default function DashboardPage() {
                       } else if (hasNone) {
                         return <p className="text-xs text-muted-foreground">Sin restricciones</p>;
                       } else {
-                        return <p className="text-xs text-muted-foreground">No restrictions</p>;
+                        return <p className="text-xs text-muted-foreground">Sin restricciones</p>;
                       }
                     })()}
                   </CardContent>
@@ -598,7 +598,7 @@ export default function DashboardPage() {
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <Target className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold">Goals</h2>
+              <h2 className="text-lg font-bold">Objetivos</h2>
             </div>
             <Card className="border hover:border-primary/50 transition-all">
               <CardContent className="p-4">
@@ -612,7 +612,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-muted-foreground">No goals set yet</p>
+                  <p className="text-xs text-muted-foreground">No hay objetivos establecidos aún</p>
                 )}
               </CardContent>
             </Card>
@@ -633,7 +633,7 @@ export default function DashboardPage() {
                 <Link href="/mi-cuenta/comidas">
                   <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
                     <ChefHat className="w-5 h-5 mr-2" />
-                    View Meal Plan
+                    Ver Plan de Comidas
                   </Button>
                 </Link>
               </div>
