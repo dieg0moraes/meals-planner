@@ -1,4 +1,4 @@
-## Meals Planner – Hackathon MVP
+## Shopping Planner – Hackathon MVP
 
 We are building a simple, B2C web app to help people in Latin America plan their weekly supermarket purchases. Today, most people buy ad‑hoc and end up overspending, wasting food, or missing essentials. Our MVP focuses on three steps:
 

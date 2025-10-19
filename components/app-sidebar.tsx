@@ -54,7 +54,7 @@ export function AppSidebar() {
             <span className="text-white font-bold text-lg">M</span>
           </div>
           <div>
-            <h2 className="font-semibold text-lg leading-none">ShoppingPlanner</h2>
+            <h2 className="font-semibold text-lg leading-none">Carritoo</h2>
             <p className="text-xs text-muted-foreground">AI-Powered</p>
           </div>
         </div>

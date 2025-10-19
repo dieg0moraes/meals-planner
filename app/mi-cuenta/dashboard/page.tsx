@@ -630,10 +630,10 @@ export default function DashboardPage() {
                       : "Completa tu perfil para desbloquear planes personalizados."}
                   </p>
                 </div>
-                <Link href="/meal-plan">
-                  <Button className="shadow-md">
-                    <ChefHat className="w-4 h-4 mr-2" />
-                    Ver Plan
+                <Link href="/mi-cuenta/comidas">
+                  <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
+                    <ChefHat className="w-5 h-5 mr-2" />
+                    View Meal Plan
                   </Button>
                 </Link>
               </div>

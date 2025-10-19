@@ -1,12 +1,12 @@
 -- Enable RLS and policies to allow authenticated users to read/write their own data
 
 -- Enable Row Level Security
-alter table if exists public.profiles enable row level security;
+-- alter table if exists public.profiles enable row level security;
 alter table if exists public.weekly_meals enable row level security;
 alter table if exists public.shopping_lists enable row level security;
 
 -- Profiles: a user can read and write only their own profile row
-drop policy if exists "profile_select_own" on public.profiles;
+/* drop policy if exists "profile_select_own" on public.profiles;
 create policy "profile_select_own" on public.profiles
   for select
   using (auth.uid() = auth_user_id);
@@ -20,7 +20,7 @@ drop policy if exists "profile_update_own" on public.profiles;
 create policy "profile_update_own" on public.profiles
   for update
   using (auth.uid() = auth_user_id)
-  with check (auth.uid() = auth_user_id);
+  with check (auth.uid() = auth_user_id); */
 
 -- Helper predicate: map auth.uid() to profile.id via profiles.auth_user_id
 -- Weekly meals: can read and write rows linked to own profile

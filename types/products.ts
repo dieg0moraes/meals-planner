@@ -59,3 +59,31 @@ export interface SearchError {
   details?: string;
 }
 
+// Shopping cart types
+export interface ShoppingCartItem {
+  product: Product;
+  ingredient: string;
+  quantity: number;
+  unit: string;
+}
+
+export interface ShoppingCart {
+  store: Store;
+  storeName: string;
+  items: ShoppingCartItem[];
+  total: number;
+}
+
+export interface OptimizeResponse {
+  success: true;
+  carts: ShoppingCart[];
+  timestamp: string;
+}
+
+export interface OptimizeError {
+  success: false;
+  error: string;
+  message: string;
+  details?: string;
+}
+

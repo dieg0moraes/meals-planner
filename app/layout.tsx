@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({ subsets: ["latin"] })
 const sourceSerif = Source_Serif_4({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "ShoppingPlanner - AI-Powered Weekly Shopping List Generator",
+  title: "Carritoo - AI-Powered Weekly Shopping List Generator",
   description: "Generate your weekly shopping list with AI assistance",
 }
 
