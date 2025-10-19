@@ -103,6 +103,7 @@ export default function AgentsPlaygroundPage() {
     const [plannerMessages, setPlannerMessages] = useState<ChatMessage[]>([]);
     const [plannerInput, setPlannerInput] = useState<string>("");
     const [weeklyMeals, setWeeklyMeals] = useState<WeeklyMeals | null>(null);
+    const [planLoading, setPlanLoading] = useState<boolean>(true);
 
     // Hydrate from auth context
     useEffect(() => {
@@ -217,7 +218,7 @@ export default function AgentsPlaygroundPage() {
         async function ensureProfileId(): Promise<string | null> {
             if (profileId) return profileId;
             if (!authUserId) return null;
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from("profiles")
                 .select("id")
                 .eq("auth_user_id", authUserId)
@@ -230,14 +231,17 @@ export default function AgentsPlaygroundPage() {
             if (!weekStartDate) return;
             const pid = await ensureProfileId();
             if (!pid) return;
-
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from("weekly_meals")
                 .select("*")
                 .eq("user_id", pid)
-                .eq("week_start_date", weekStartDate)
+                .order("updated_at", { ascending: false })
+                .limit(1)
                 .maybeSingle();
-            if (active && data) setWeeklyMeals(data as unknown as WeeklyMeals);
+            if (active) {
+                if (data) setWeeklyMeals(data as unknown as WeeklyMeals);
+                setPlanLoading(false);
+            }
 
             const channel = supabase
                 .channel(`weekly_meals:${pid}`)
@@ -247,9 +251,7 @@ export default function AgentsPlaygroundPage() {
                     (payload) => {
                         const row = (payload.new ?? payload.old) as any;
                         if (!row) return;
-                        if (row.week_start_date === weekStartDate) {
-                            setWeeklyMeals(payload.new as unknown as WeeklyMeals);
-                        }
+                        if (payload.new) setWeeklyMeals(payload.new as unknown as WeeklyMeals);
                     }
                 )
                 .subscribe();
@@ -323,7 +325,7 @@ export default function AgentsPlaygroundPage() {
                         <WeeklyMealsView plan={weeklyMeals} />
                     ) : (
                         <Card className="mt-4 p-4 text-sm text-muted-foreground">
-                            Conectando al plan semanal...
+                            {planLoading ? "Conectando al plan semanal..." : "Aún no hay plan para esta semana."}
                         </Card>
                     )}
                 </div>
