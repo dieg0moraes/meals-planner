@@ -158,7 +158,7 @@ export default function AgentsPlaygroundPage() {
             const res = await fetch("/api/planner/step", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ userId, weekStartDate, query: text }),
+                body: JSON.stringify({ userId, query: text }),
             });
             const json = await res.json();
             if (!res.ok) throw new Error(json.error || "Request failed");
