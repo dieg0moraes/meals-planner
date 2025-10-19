@@ -1,12 +1,12 @@
 "use client"
 
 import { usePathname } from "next/navigation"
-import { useCallback, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useEntities } from "@/components/entities-provider"
 import { useApplication } from "@/components/application-provider"
-import { Bot, Minus, X } from "lucide-react"
+import { Bot, Minus, Mic, Square } from "lucide-react"
 
 export default function MiCuentaLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -26,12 +26,14 @@ function FloatingAgentChat() {
   const [messages, setMessages] = useState<{ role: "user" | "agent" | "system"; text: string; at: number }[]>([])
   const [input, setInput] = useState("")
   const [isOpen, setIsOpen] = useState(false)
+  const [isRecording, setIsRecording] = useState(false)
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<BlobPart[]>([])
 
-  const handleSend = useCallback(async () => {
-    const text = input.trim()
+  const sendText = useCallback(async (rawText: string) => {
+    const text = (rawText || "").trim()
     if (!text) return
     setMessages((m) => [...m, { role: "user", text, at: Date.now() }])
-    setInput("")
     try {
       setLoading(true)
       const userId = profile?.id ?? profile?.authUserId
@@ -54,7 +56,59 @@ function FloatingAgentChat() {
     } finally {
       setLoading(false)
     }
-  }, [input, pathname, profile?.id, profile?.authUserId])
+  }, [pathname, profile?.authUserId, profile?.id, setLoading])
+
+  const handleStartRecording = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "audio/mp4"
+      const rec = new MediaRecorder(stream, { mimeType })
+      chunksRef.current = []
+      rec.ondataavailable = (e) => { if (e.data && e.data.size) chunksRef.current.push(e.data) }
+      rec.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType })
+        chunksRef.current = []
+        if (blob.size === 0) return
+        const form = new FormData()
+        form.append("file", blob, mimeType === "audio/webm" ? "note.webm" : "note.mp4")
+        try {
+          setLoading(true)
+          const res = await fetch("/api/audio/transcribe", { method: "POST", body: form })
+          const json = await res.json()
+          if (!res.ok) throw new Error(json.error || "Transcription failed")
+          const text = (json.text || "").trim()
+          if (text) {
+            await sendText(text)
+          }
+        } catch (e) {
+          setMessages((m) => [...m, { role: "system", text: (e as Error).message || "Error de transcripción", at: Date.now() }])
+        } finally {
+          setLoading(false)
+        }
+      }
+      mediaRecorderRef.current = rec
+      rec.start()
+      setIsRecording(true)
+    } catch (e) {
+      setMessages((m) => [...m, { role: "system", text: "No se pudo acceder al micrófono", at: Date.now() }])
+    }
+  }, [sendText, setLoading])
+
+  const handleStopRecording = useCallback(() => {
+    const rec = mediaRecorderRef.current
+    if (rec && rec.state === "recording") {
+      rec.stop()
+      rec.stream.getTracks().forEach((t) => t.stop())
+    }
+    setIsRecording(false)
+  }, [])
+
+  const handleSendFromInput = useCallback(async () => {
+    const t = input.trim()
+    if (!t) return
+    setInput("")
+    await sendText(t)
+  }, [input, sendText])
 
   // Hide floating chat on dashboard
   if (pathname?.startsWith("/mi-cuenta/dashboard")) {
@@ -118,11 +172,14 @@ function FloatingAgentChat() {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault()
-              handleSend()
+              handleSendFromInput()
             }
           }}
         />
-        <Button size="sm" onClick={handleSend}>Enviar</Button>
+        <Button size="sm" variant={isRecording ? "destructive" : "secondary"} aria-label={isRecording ? "Detener grabación" : "Grabar audio"} onClick={isRecording ? handleStopRecording : handleStartRecording}>
+          {isRecording ? <Square className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+        </Button>
+        <Button size="sm" onClick={handleSendFromInput}>Enviar</Button>
       </div>
     </Card>
   )
