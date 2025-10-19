@@ -9,9 +9,12 @@ import { useFlashOnChange } from "@/hooks/use-flash-on-change"
 import type { Meal } from "@/types"
 import { ChevronDown } from "lucide-react"
 import { useApplication } from "@/components/application-provider"
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
 export default function MiComidasPage() {
-    const { weeklyMeals } = useEntities()
+    const router = useRouter()
+    const { weeklyMeals, shoppingList } = useEntities()
     const meals = (weeklyMeals?.meals ?? []) as Meal[]
     const [open, setOpen] = useState<Record<string, boolean>>({})
     const toggle = (id: string) => setOpen((m) => ({ ...m, [id]: !m[id] }))
@@ -19,6 +22,7 @@ export default function MiComidasPage() {
     const listFlash = useFlashOnChange(JSON.stringify(meals.map(m => ({ id: m.id, name: m.name, ingredients: m.ingredients }))))
     const kickoffDoneRef = useRef(false)
     const { setLoading } = useApplication()
+    const isShoppingListEmpty = (shoppingList?.items?.length ?? 0) === 0
 
     useEffect(() => {
         if (kickoffDoneRef.current) return
@@ -87,6 +91,20 @@ export default function MiComidasPage() {
                             </Card>
                         )
                     })}
+                    {isShoppingListEmpty ? (
+                        <div className="pt-2">
+                            <Separator className="my-4" />
+                            <div className="flex items-center justify-center">
+                                <Button
+                                    aria-label="Aprobar comidas y crear lista"
+                                    onClick={() => router.push('/mi-cuenta/compras')}
+                                    className="px-6"
+                                >
+                                    Aprobar comidas y crear lista
+                                </Button>
+                            </div>
+                        </div>
+                    ) : null}
                 </div>
             )}
         </div>

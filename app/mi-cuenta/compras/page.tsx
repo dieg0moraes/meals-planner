@@ -152,7 +152,7 @@ export default function MiListaComprasPage() {
               ) : (
                 <>
                   <ShoppingCartIcon className="mr-2 h-4 w-4" />
-                  Buscar Productos
+                  Cotizar Productos
                 </>
               )}
             </Button>

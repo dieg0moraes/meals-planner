@@ -15,6 +15,7 @@ import { LayoutDashboard, Calendar, ShoppingCart, LogOut } from "lucide-react"
 import Link from "next/link"
 import { createBrowserClient } from "@/lib/supabase/client"
 import { useAuth } from "@/components/auth-provider"
+import Image from "next/image"
 
 const menuItems = [
   {
@@ -50,9 +51,14 @@ export function AppSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b px-6 py-4">
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-emerald-600 flex items-center justify-center">
-            <span className="text-white font-bold text-lg">M</span>
-          </div>
+          <Image
+            src="/icon.png"
+            alt="Carritoo"
+            width={32}
+            height={32}
+            className="rounded-[2px]"
+            priority
+          />
           <div>
             <h2 className="font-semibold text-lg leading-none">Carritoo</h2>
             <p className="text-xs text-muted-foreground">AI-Powered</p>

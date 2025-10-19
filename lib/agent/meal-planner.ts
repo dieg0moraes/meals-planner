@@ -94,8 +94,16 @@ async function incorporateFeedback(state: PlannerState): Promise<Partial<Planner
             return { targetMealsCount: count, history, feedback: undefined };
         }
     }
-    // While planning: rewrite full list according to instruction
+    // While planning: clarify if ambiguous; otherwise rewrite full list
     if (state.phase === "plan" && state.feedback) {
+        const ambiguous = await shouldClarifyFeedback({ text: state.feedback, mealsCount: state.meals?.length ?? 0 });
+        if (ambiguous) {
+            const history = [
+                ...(state.history ?? []),
+                { role: "agent" as const, text: "No entiendo lo que necesitás.", at: Date.now() },
+            ];
+            return { history, feedback: undefined };
+        }
         console.log("[incorporateFeedback] Rewriting meals with feedback:", state.feedback);
         const requiredCount = state.targetMealsCount ?? (state.meals?.length ?? 10);
         const beforeNames = (state.meals ?? []).map((m) => m.name);
@@ -111,7 +119,7 @@ async function incorporateFeedback(state: PlannerState): Promise<Partial<Planner
         console.log(`[incorporateFeedback] Rewrite completed in ${endRewrite - startRewrite}ms`, { before: beforeNames, after: afterNames });
         const history = [
             ...(state.history ?? []),
-            { role: "agent" as const, text: "Actualicé la lista completa.", at: Date.now() },
+            { role: "agent" as const, text: "Actualicé la lista de comidas.", at: Date.now() },
         ];
         return { meals: updatedMeals, history, feedback: undefined };
     }
@@ -199,6 +207,36 @@ const MealChangeSchema = z.object({
         replaceWith: MealSchema.optional().describe("Full replacement meal")
     })).optional()
 });
+
+// Minimal clarifier: decide if we should ask the user to clarify
+const PlannerClarifySchema = z.object({
+    shouldClarify: z.boolean().describe("True if the user's message is ambiguous."),
+});
+
+async function shouldClarifyFeedback(params: { text: string; mealsCount: number }) {
+    const { text, mealsCount } = params;
+    const model = new ChatOpenAI({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
+        temperature: 0,
+        timeout: 8000,
+    });
+    const extract = model.withStructuredOutput(PlannerClarifySchema, {
+        method: "functionCalling",
+        name: "classify_clarity",
+    });
+    try {
+        // verbose logs removed
+        const res = await extract.invoke([
+            { role: "system", content: "Decidí si el pedido del usuario es AMBIGUO. Si no está claro qué acción tomar sobre el plan de comidas, devolvé shouldClarify=true. Si es un pedido concreto (cantidad, agregar, reemplazar), devolvé false." },
+            { role: "user", content: `Pedido: ${text}\nComidas actuales: ${mealsCount}` },
+        ] as any);
+        // verbose logs removed
+        return !!res.shouldClarify;
+    } catch (e) {
+        // verbose logs removed
+        return false;
+    }
+}
 
 function uuid(): string {
     return (globalThis.crypto ?? require("crypto")).randomUUID();
