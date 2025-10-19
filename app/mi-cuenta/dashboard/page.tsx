@@ -18,7 +18,7 @@ import {
   Heart,
   X,
   Target,
-  ChefHat,
+  ShoppingCart,
   CheckCircle2,
   Circle,
   Sparkles,
@@ -194,11 +194,11 @@ export default function DashboardPage() {
             <div className="flex flex-col items-center justify-center min-h-[70vh] text-center">
               <div className="relative mb-8">
                 <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full" />
-                <ChefHat className="w-24 h-24 text-primary relative" strokeWidth={1.5} />
+                <ShoppingCart className="w-24 h-24 text-primary relative" strokeWidth={1.5} />
               </div>
 
               <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent mb-4">
-                Bienvenido a MealPlanner
+                Bienvenido a Carritoo
               </h1>
 
               <p className="text-xl text-muted-foreground mb-8 max-w-2xl leading-relaxed">
@@ -530,7 +530,7 @@ export default function DashboardPage() {
                 </div>
                 <Link href="/mi-cuenta/comidas">
                   <Button size="lg" className="text-lg px-8 py-6 shadow-lg hover:shadow-xl transition-all">
-                    <ChefHat className="w-5 h-5 mr-2" />
+                    <ShoppingCart className="w-5 h-5 mr-2" />
                     Ver Plan de Comidas
                   </Button>
                 </Link>
