@@ -50,7 +50,7 @@ function tryParseJson<T>(text: string): T {
     }
 }
 
-const UnitSchema = z.enum(["unit", "g", "kg", "ml", "l", "tbsp", "tsp", "cup", "pack"]);
+const UnitSchema = z.string().min(1);
 
 const ShoppingListItemSchema = z.object({
     name: z.string().min(1),

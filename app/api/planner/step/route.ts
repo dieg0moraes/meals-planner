@@ -112,9 +112,14 @@ export async function POST(req: NextRequest) {
             throw new Error(selErr.message);
         }
 
-        // Message handling based on phase
+        // Message handling: prefer the latest agent message from state history if available
         let message = "Plan actualizado.";
-        if (updated.phase === "ask_count") {
+        const lastAgentMsg = Array.isArray((updated as any).history)
+            ? (updated as any).history.filter((m: any) => m?.role === "agent").slice(-1)[0]?.text
+            : undefined;
+        if (typeof lastAgentMsg === "string" && lastAgentMsg.trim().length > 0) {
+            message = lastAgentMsg;
+        } else if (updated.phase === "ask_count") {
             message = "¿Cuántas comidas querés planificar para esta semana?";
         } else if (!existing?.meals?.length && (updated.meals?.length ?? 0) === 0) {
             message = "Estoy listo para proponer comidas cuando me indiques la cantidad.";
