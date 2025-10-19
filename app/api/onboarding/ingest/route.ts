@@ -55,7 +55,7 @@ You MUST provide a clear, conversational explanation in the "explanationOfChange
 - Any contradictions found and how they were resolved
 - Use the SAME LANGUAGE as the user's input (if they speak Spanish, respond in Spanish)
 - Be specific with examples (e.g., "Omití 'Brunito' porque no está claro si es una persona o mascota")
-- Keep it concise but informative (2-4 sentences max)
+- Keep it concise but informative (1-2 sentences max)
 `;
 
 const INITIAL_EXTRACTION_EXAMPLES = `
@@ -79,10 +79,14 @@ Current user data: ${JSON.stringify(existingData, null, 2)}
 
 ${COMMON_EXTRACTION_RULES}
 
-Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new).
-If new info contradicts existing data, prefer the new information.
-If new info adds to existing data (e.g., new favorite foods), merge both. THIS IS CRITICAL, DONT LOSE ANY INFORMATION.
-Always return ALL fields, not just the updated ones.`;
+${INITIAL_EXTRACTION_EXAMPLES}
+
+UPDATING EXISTING DATA:
+- Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new)
+- If new info contradicts existing data, prefer the new information
+- If new info adds to existing data (e.g., new favorite foods), merge both. THIS IS CRITICAL, DONT LOSE ANY INFORMATION
+- Always return ALL fields, not just the updated ones
+- Maintain the user in household.people with role "self" unless they explicitly say otherwise`;
     }
 
     return `You extract user onboarding details for a weekly meal planner.
