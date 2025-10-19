@@ -51,6 +51,41 @@ function tryParseJson<T>(text: string): T {
 }
 
 /**
+ * Enriquece los productos seleccionados por el LLM con los datos completos
+ * (imágenes, links, descripciones) de los datos originales.
+ */
+function enrichCartsWithCompleteProducts(carts: any[], ingredientsWithProducts: any[]): any[] {
+  return carts.map((cart: any) => ({
+    ...cart,
+    items: cart.items.map((item: any) => {
+      // Buscar el ingrediente en los datos originales
+      const ingredientData = ingredientsWithProducts.find(
+        (ing: any) => ing.ingredient === item.ingredient
+      );
+
+      if (ingredientData && ingredientData.products) {
+        // Buscar el producto completo que coincida con el seleccionado por el LLM
+        const fullProduct = ingredientData.products.find((p: Product) => 
+          p.name === item.product.name && 
+          p.store === item.product.store
+        );
+
+        if (fullProduct) {
+          console.log(`[optimize-api] 🔗 Recuperando producto completo: "${fullProduct.name}" de ${fullProduct.storeName}`);
+          return {
+            ...item,
+            product: fullProduct // Reemplazar con el producto completo
+          };
+        }
+      }
+
+      console.warn(`[optimize-api] ⚠️ No se encontró producto completo para "${item.product.name}"`);
+      return item; // Devolver tal cual si no se encuentra
+    })
+  }));
+}
+
+/**
  * Estima precios para productos de Tienda Inglesa que no tienen precio.
  * Toma el precio más barato de otros supermercados y le suma un random entre 10 y 20.
  */
@@ -135,6 +170,21 @@ export async function POST(request: NextRequest) {
 
     console.log(`[optimize-api] Optimizando selección para ${ingredientsWithProducts.length} ingredientes`);
 
+    // Filtrar solo las propiedades esenciales para el LLM (reducir tamaño del prompt)
+    const essentialData = ingredientsWithProducts.map((item: any) => ({
+      ingredient: item.ingredient,
+      quantity: item.quantity,
+      unit: item.unit,
+      products: item.products.map((p: any) => ({
+        name: p.name,
+        brand: p.brand,
+        price: p.price,
+        store: p.store,
+      }))
+    }));
+
+    console.log(`[optimize-api] Datos reducidos de ${JSON.stringify(ingredientsWithProducts).length} a ${JSON.stringify(essentialData).length} caracteres`);
+
     // Construir el prompt
     const systemPrompt = `Sos un asistente de compras experto en Uruguay. Tu tarea es seleccionar el mejor producto de cada supermercado (Disco, Tienda Inglesa, Tata) para cada ingrediente.
 
@@ -147,7 +197,7 @@ Criterios:
 Respondé SOLO con JSON válido.`;
 
     const userPrompt = `Ingredientes y productos disponibles:
-${JSON.stringify(ingredientsWithProducts, null, 2)}
+${JSON.stringify(essentialData, null, 2)}
 
 Devolvé un JSON con este formato exacto:
 {
@@ -160,7 +210,10 @@ Devolvé un JSON con este formato exacto:
           "ingredient": "nombre del ingrediente original",
           "quantity": cantidad_solicitada,
           "unit": "unidad",
-          "product": { ... producto completo seleccionado ... }
+          "product": {
+            "name": "nombre del producto",
+            "store": "disco"
+          }
         }
       ]
     }
@@ -171,7 +224,7 @@ IMPORTANTE:
 - Creá un carrito por cada tienda (disco, tienda-inglesa, tata)
 - Para cada ingrediente, seleccioná el MEJOR producto de esa tienda
 - Si una tienda no tiene productos para un ingrediente, omitilo del carrito de esa tienda
-- Incluí el objeto producto COMPLETO en cada item
+- En product, solo incluí "name" y "store" (los demás datos los recuperaremos después)
 - Solo incluí carritos que tengan al menos 1 item`;
 
     const content = await callOpenAI(systemPrompt, userPrompt);
@@ -191,8 +244,11 @@ IMPORTANTE:
       );
     }
 
+    // Recuperar productos completos (con imágenes, links, etc.)
+    const cartsWithCompleteProducts = enrichCartsWithCompleteProducts(parsed.carts || [], ingredientsWithProducts);
+
     // Procesar precios de Tienda Inglesa que faltan
-    const cartsWithFixedPrices = fixTiendaInglesaPrices(parsed.carts || [], ingredientsWithProducts);
+    const cartsWithFixedPrices = fixTiendaInglesaPrices(cartsWithCompleteProducts, ingredientsWithProducts);
 
     // Calcular totales
     const carts: ShoppingCart[] = cartsWithFixedPrices.map((cart: any) => {
