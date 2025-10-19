@@ -96,16 +96,19 @@ async function incorporateFeedback(state: PlannerState): Promise<Partial<Planner
     }
     // While planning: rewrite full list according to instruction
     if (state.phase === "plan" && state.feedback) {
+        console.log("[incorporateFeedback] Rewriting meals with feedback:", state.feedback);
         const requiredCount = state.targetMealsCount ?? (state.meals?.length ?? 10);
         const beforeNames = (state.meals ?? []).map((m) => m.name);
+        const startRewrite = Date.now();
         const updatedMeals = await rewriteMealsFromInstruction(
             state.profile,
             requiredCount,
             state.meals ?? [],
             state.feedback
         );
+        const endRewrite = Date.now();
         const afterNames = updatedMeals.map((m) => m.name);
-        console.log("[planner] rewrite meals", { before: beforeNames, after: afterNames });
+        console.log(`[incorporateFeedback] Rewrite completed in ${endRewrite - startRewrite}ms`, { before: beforeNames, after: afterNames });
         const history = [
             ...(state.history ?? []),
             { role: "agent" as const, text: "Actualicé la lista completa.", at: Date.now() },
@@ -183,15 +186,42 @@ const MealSchema = z.object({
     notes: z.string().nullable().optional(),
 });
 
+// Diff-based schema for faster updates
+const MealChangeSchema = z.object({
+    type: z.enum(["replace_all", "modify_specific"]),
+    // For replace_all: full new list
+    meals: z.array(MealSchema).optional(),
+    // For modify_specific: only the changes
+    modifications: z.array(z.object({
+        index: z.number().int().min(0).describe("Index of meal to change (0-based)"),
+        newName: z.string().optional().describe("New name if changing"),
+        replaceWith: MealSchema.optional().describe("Full replacement meal")
+    })).optional()
+});
+
 function uuid(): string {
     return (globalThis.crypto ?? require("crypto")).randomUUID();
 }
 
 async function generateMealsFromProfile(profile: UserProfile, count: number): Promise<Meal[]> {
-    const model = new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-4o-mini", temperature: 0 });
-    // OpenAI Structured Outputs requires top-level object, not array
-    const schema = z.object({ meals: z.array(MealSchema).min(1).max(Math.max(10, count + 5)) });
-    const extract = model.withStructuredOutput(schema);
+    const model = new ChatOpenAI({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o",
+        temperature: 0,
+        maxTokens: 4000,
+        timeout: 30000,
+    });
+
+    // OPTIMIZATION: Use fixed-size schema (max 15 meals) to enable OpenAI caching
+    // This makes subsequent requests 10x faster after first use
+    const FIXED_MAX_MEALS = 15;
+    const schema = z.object({
+        meals: z.array(MealSchema).min(1).max(FIXED_MAX_MEALS)
+    });
+
+    const extract = model.withStructuredOutput(schema, {
+        method: "functionCalling",
+        name: "generate_meals"
+    });
 
     const householdSize = (profile.household?.people?.length ?? 0) + (profile.household?.pets?.length ?? 0);
     const sys = `Sos un planificador de comidas para una familia en LATAM.
@@ -203,13 +233,25 @@ Reglas:
 - Considera favoritos: ${JSON.stringify(profile.favoriteFoods || [])}.
 - Cada ingrediente debe marcar isOptional=false salvo salsas/toppings/especias que pueden ser true.`;
 
-    const mealsObj = await extract.invoke([
-        { role: "system", content: sys },
+    const mealsObj = await extract.invoke(
+        [
+            { role: "system", content: sys },
+            {
+                role: "user",
+                content: `Hogar: ${householdSize} integrantes. Objetivos: ${JSON.stringify(profile.goals || [])}. Genera la lista.`,
+            },
+        ] as any,
         {
-            role: "user",
-            content: `Hogar: ${householdSize} integrantes. Objetivos: ${JSON.stringify(profile.goals || [])}. Genera la lista.`,
-        },
-    ] as any);
+            metadata: {
+                userId: profile.id,
+                householdSize,
+                mealsCount: count,
+                hasRestrictions: (profile.dietaryRestrictions?.length ?? 0) > 0,
+            },
+            tags: ["meal-planning", "generate-meals"],
+            runName: "generate-meals-from-profile",
+        }
+    );
     const meals = mealsObj.meals;
     const mapped: Meal[] = (meals as Array<z.infer<typeof MealSchema>>).map((m) => ({
         id: uuid(),
@@ -233,39 +275,96 @@ async function rewriteMealsFromInstruction(
     currentMeals: Meal[],
     instruction: string
 ): Promise<Meal[]> {
-    const model = new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-4o-mini", temperature: 0 });
-    const schema = z.object({ meals: z.array(MealSchema).length(count) });
-    const extract = model.withStructuredOutput(schema);
+    const model = new ChatOpenAI({
+        model: process.env.OPENAI_MODEL ?? "gpt-4o",
+        temperature: 0,
+        timeout: 15000, // Reduced timeout for diff approach
+    });
 
-    const sys = `Sos un planificador de comidas para LATAM. Te daré una lista de comidas actual y una instrucción.
-Responde SOLO con la lista completa actualizada (exactamente ${count} elementos), respetando restricciones: ${JSON.stringify(
-        profile.dietaryRestrictions || []
-    )}, evitando: ${JSON.stringify(profile.dislikedFoods || [])}, y considerando favoritos: ${JSON.stringify(
-        profile.favoriteFoods || []
-    )}.`;
+    // ULTRA-OPTIMIZED: Use diff-based approach - only generate what changes
+    const extract = model.withStructuredOutput(MealChangeSchema, {
+        method: "functionCalling",
+        name: "update_meals"
+    });
 
-    const mealsObj = await extract.invoke([
-        { role: "system", content: sys },
+    const mealsList = currentMeals.map((m, i) => `${i}. ${m.name}`).join("\n");
+
+    const sys = `Eres un asistente que actualiza planes de comidas de forma EFICIENTE.
+Restricciones: ${(profile.dietaryRestrictions || []).join(", ") || "ninguna"}
+Evitar: ${(profile.dislikedFoods || []).join(", ") || "nada"}
+
+IMPORTANTE:
+- Si la instrucción afecta solo algunas comidas específicas, usa type="modify_specific" y solo indica los cambios
+- Si requiere rehacer todo el plan, usa type="replace_all"
+- Ejemplo: "cambia pollo por pavo" → modify_specific con índices de comidas con pollo
+- Ejemplo: "planifica todo vegetariano" → replace_all`;
+
+    const result = await extract.invoke(
+        [
+            { role: "system", content: sys },
+            {
+                role: "user",
+                content: `Lista actual:\n${mealsList}\n\nInstrucción: ${instruction}`,
+            },
+        ] as any,
         {
-            role: "user",
-            content: `Lista actual (${currentMeals.length}): ${JSON.stringify(
-                currentMeals.map((m) => ({ name: m.name, ingredients: m.ingredients, tags: m.tags || [] }))
-            )}\nInstrucción del usuario: ${instruction}`,
-        },
-    ] as any);
+            metadata: {
+                userId: profile.id,
+                approach: "diff-based",
+                instruction: instruction.substring(0, 100),
+            },
+            tags: ["meal-planning", "diff-update"],
+            runName: "update-meals-diff",
+        }
+    );
 
-    const meals = mealsObj.meals as Array<z.infer<typeof MealSchema>>;
-    return meals.map((m) => ({
-        id: uuid(),
-        name: m.name,
-        ingredients: m.ingredients.map((ing: z.infer<typeof IngredientSchema>) => ({
-            name: ing.name,
-            quantity: ing.quantity,
-            unit: ing.unit,
-            isOptional: ing.isOptional,
-            notes: ing.notes ?? undefined,
-        })),
-        tags: m.tags ?? [],
-        notes: m.notes ?? undefined,
-    }));
+    // Apply changes based on response type
+    if (result.type === "replace_all" && result.meals) {
+        return result.meals.slice(0, count).map((m) => ({
+            id: uuid(),
+            name: m.name,
+            ingredients: m.ingredients.map((ing) => ({
+                name: ing.name,
+                quantity: ing.quantity,
+                unit: ing.unit,
+                isOptional: ing.isOptional,
+                notes: ing.notes ?? undefined,
+            })),
+            tags: m.tags ?? [],
+            notes: m.notes ?? undefined,
+        }));
+    } else if (result.type === "modify_specific" && result.modifications) {
+        // Apply modifications to existing meals
+        const updatedMeals = [...currentMeals];
+        for (const mod of result.modifications) {
+            if (mod.index >= 0 && mod.index < updatedMeals.length) {
+                if (mod.replaceWith) {
+                    // Full replacement
+                    updatedMeals[mod.index] = {
+                        id: updatedMeals[mod.index].id, // Keep same ID
+                        name: mod.replaceWith.name,
+                        ingredients: mod.replaceWith.ingredients.map(ing => ({
+                            name: ing.name,
+                            quantity: ing.quantity,
+                            unit: ing.unit,
+                            isOptional: ing.isOptional,
+                            notes: ing.notes ?? undefined,
+                        })),
+                        tags: mod.replaceWith.tags ?? [],
+                        notes: mod.replaceWith.notes ?? undefined,
+                    };
+                } else if (mod.newName) {
+                    // Just update name (keep ingredients)
+                    updatedMeals[mod.index] = {
+                        ...updatedMeals[mod.index],
+                        name: mod.newName,
+                    };
+                }
+            }
+        }
+        return updatedMeals;
+    }
+
+    // Fallback: return original if something went wrong
+    return currentMeals;
 }
