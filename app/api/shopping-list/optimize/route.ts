@@ -1,36 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Product, Store, ShoppingCart } from '@/types/products';
+import { ChatOpenAI } from '@langchain/openai';
 
-// Helper para llamar a OpenAI (igual que en shopping-list-builder.ts)
+// Helper para llamar a OpenAI con LangSmith tracing
 async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) {
-    throw new Error("OPENAI_API_KEY is not set");
-  }
-  const model = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
-
-  console.log("[optimize-api] calling OpenAI", { model, systemPromptLen: systemPrompt.length, userPromptLen: userPrompt.length });
-  const resp = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-    }),
+  const modelName = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const model = new ChatOpenAI({
+    model: modelName,
+    temperature: 0.3,
   });
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(`OpenAI request failed: ${resp.status} ${resp.statusText} ${text}`);
-  }
-  const data = (await resp.json()) as any;
-  const content: string = data.choices?.[0]?.message?.content ?? "";
+
+  console.log("[optimize-api] calling OpenAI with LangSmith tracing", { 
+    model: modelName, 
+    systemPromptLen: systemPrompt.length, 
+    userPromptLen: userPrompt.length 
+  });
+
+  const response = await model.invoke(
+    [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    {
+      metadata: {
+        endpoint: "shopping-list-optimize",
+        operation: "cart-selection",
+      },
+      tags: ["shopping", "optimization", "cart-builder"],
+    }
+  );
+
+  const content = response.content as string;
   console.log("[optimize-api] OpenAI content", { length: content.length });
   return content;
 }
