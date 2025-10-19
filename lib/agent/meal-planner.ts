@@ -169,7 +169,8 @@ export async function runPlannerStep(
 
 // ===== Helpers =====
 
-const UnitSchema = z.enum(["unit", "g", "kg", "ml", "l", "tbsp", "tsp", "cup", "pack"]);
+// Simplified unit handling: accept any non-empty string to avoid parse errors (e.g. "clove")
+const UnitSchema = z.string().min(1);
 
 const IngredientSchema = z.object({
     name: z.string().min(1),

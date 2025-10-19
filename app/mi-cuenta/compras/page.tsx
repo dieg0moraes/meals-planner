@@ -5,13 +5,33 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useEntities } from "@/components/entities-provider"
 import { useFlashOnChange } from "@/hooks/use-flash-on-change"
 import type { ShoppingListItem } from "@/types"
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
+import { useApplication } from "@/components/application-provider"
 
 export default function MiListaComprasPage() {
-  const { shoppingList } = useEntities()
+  const { shoppingList, weeklyMeals } = useEntities()
   const items = (shoppingList?.items ?? []) as ShoppingListItem[]
   const listFlash = useFlashOnChange(JSON.stringify(items.map(it => ({ id: it.id, name: it.name, q: it.quantity, u: it.unit }))))
   const [checked, setChecked] = useState<Record<string, boolean>>({})
+  const kickoffDoneRef = useRef(false)
+  const { setLoading } = useApplication()
+
+  useEffect(() => {
+    if (kickoffDoneRef.current) return
+    const hasMeals = (weeklyMeals?.meals?.length ?? 0) > 0
+    const isListEmpty = (shoppingList?.items?.length ?? 0) === 0
+    if (hasMeals && isListEmpty) {
+      kickoffDoneRef.current = true
+      ;(async () => {
+        try {
+          setLoading(true)
+          await fetch('/api/shopping-list/kickoff', { method: 'POST' })
+        } catch {}
+        finally { setLoading(false) }
+      })()
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shoppingList?.items?.length, weeklyMeals?.meals?.length])
   return (
     <div>
       <div className="mb-6">
