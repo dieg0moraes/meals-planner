@@ -226,6 +226,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex items-start gap-3">
                     <CheckCircle2 className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+
                     <div>
                       <p className="font-medium">Establece tus preferencias dietéticas</p>
                       <p className="text-sm text-muted-foreground">¿Alguna restricción o comida favorita?</p>
