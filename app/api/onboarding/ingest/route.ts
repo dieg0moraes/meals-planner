@@ -29,6 +29,7 @@ function isProfileComplete(p: UserProfile): boolean {
         hasFavorite &&
         hasDisliked
     );
+
 }
 
 const COMMON_EXTRACTION_RULES = `
