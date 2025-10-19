@@ -4,7 +4,7 @@ import { ChatOpenAI } from '@langchain/openai';
 
 // Helper para llamar a OpenAI con LangSmith tracing
 async function callOpenAI(systemPrompt: string, userPrompt: string): Promise<string> {
-  const modelName = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
+  const modelName = "gpt-4.1";
   const model = new ChatOpenAI({
     model: modelName,
     temperature: 0.3,
