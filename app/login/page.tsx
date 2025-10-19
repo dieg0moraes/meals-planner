@@ -30,9 +30,12 @@ export default function LoginPage() {
         setLoading(true);
         try {
             const supabase = createBrowserClient();
+            // Always use current window origin (works with localhost and tunnels)
+            const redirectUrl = `${window.location.origin}/dashboard`;
+            console.log("Redirecting to:", redirectUrl);
             await supabase.auth.signInWithOAuth({
                 provider: "google",
-                options: { redirectTo: `${location.origin}/agents` },
+                options: { redirectTo: redirectUrl },
             });
         } finally {
             setLoading(false);
