@@ -6,6 +6,9 @@ import "./globals.css"
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { AuthProvider } from "@/components/auth-provider"
+import { EntitiesProvider } from "@/components/entities-provider"
+import { ApplicationProvider } from "@/components/application-provider"
+import { createClient as createSupabaseServerClient } from "@/lib/supabase/server"
 
 import { Geist, Geist_Mono, Source_Serif_4, Geist as V0_Font_Geist, Geist_Mono as V0_Font_Geist_Mono, Source_Serif_4 as V0_Font_Source_Serif_4 } from 'next/font/google'
 
@@ -19,30 +22,42 @@ const geistMono = Geist_Mono({ subsets: ["latin"] })
 const sourceSerif = Source_Serif_4({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MealPlanner - AI-Powered Meal Planning",
-  description: "Plan your meals with AI assistance",
-  generator: "v0.app",
+  title: "ShoppingPlanner - AI-Powered Weekly Shopping List Generator",
+  description: "Generate your weekly shopping list with AI assistance",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const supabase = await createSupabaseServerClient()
+  const { data } = await supabase.auth.getUser()
+  const hasSession = !!data?.user
   return (
     <html lang="en">
       <body className={`font-sans antialiased`}>
-        <AuthProvider>
-          <SidebarProvider>
-            <AppSidebar />
-            <main className="flex-1 flex flex-col w-full">
-              <div className="border-b px-4 py-3 flex items-center">
-                <SidebarTrigger />
-              </div>
-              <div className="flex-1 overflow-auto">{children}</div>
-            </main>
-          </SidebarProvider>
-        </AuthProvider>
+        <ApplicationProvider>
+          <AuthProvider>
+            <EntitiesProvider>
+            {hasSession ? (
+              <SidebarProvider>
+                <AppSidebar />
+                <main className="flex-1 flex flex-col w-full">
+                  <div className="border-b px-4 py-3 flex items-center">
+                    <SidebarTrigger />
+                  </div>
+                  <div className="flex-1 overflow-auto">{children}</div>
+                </main>
+              </SidebarProvider>
+            ) : (
+              <main className="flex-1 flex flex-col w-full">
+                <div className="flex-1 overflow-auto">{children}</div>
+              </main>
+            )}
+            </EntitiesProvider>
+          </AuthProvider>
+        </ApplicationProvider>
         <Analytics />
       </body>
     </html>

@@ -9,13 +9,12 @@ const runnable = buildMealPlannerGraph();
 
 export async function POST(req: NextRequest) {
     try {
-        const { userId, weekStartDate, query, targetMealsCount } = (await req.json()) as {
+        const { userId, query, targetMealsCount } = (await req.json()) as {
             userId: string;
-            weekStartDate: string; // ISO date
             query?: string; // natural language user request/feedback
             targetMealsCount?: number;
         };
-        console.log("[planner] input:", { userId, weekStartDate, query, targetMealsCount });
+        console.log("[planner] input:", { userId, query, targetMealsCount });
 
         const supabase = await createSupabaseServerClient();
 
@@ -43,21 +42,21 @@ export async function POST(req: NextRequest) {
         }
         const profileId = profile.id;
 
-        // Load existing weekly plan if any
+        // Load latest weekly plan if any (ignore week date)
         const { data: weeklyRow, error: wErr } = await supabase
             .from("weekly_meals")
             .select("*")
             .eq("user_id", profileId)
-            .eq("week_start_date", weekStartDate)
+            .order("updated_at", { ascending: false })
+            .limit(1)
             .maybeSingle();
         if (wErr) console.warn("[planner] load weekly_meals warn:", wErr);
 
-        const existing = weeklyRow as unknown as WeeklyMeals | null;
+        const existing = (weeklyRow as unknown as WeeklyMeals | null) ?? null;
 
         // Build planner state
         const state: PlannerState = {
             profile,
-            targetWeekStartDate: weekStartDate,
             goals: profile.goals ?? [],
             meals: existing?.meals ?? [],
             // Do NOT default to 10; ask the user first if undefined
@@ -84,7 +83,8 @@ export async function POST(req: NextRequest) {
         const upsertPayload = {
             id: existing?.id,
             user_id: profileId,
-            week_start_date: weekStartDate,
+            // Preserve existing date to update the same row; fall back to today only when creating first row
+            week_start_date: (existing as any)?.week_start_date ?? new Date().toISOString().slice(0, 10),
             meals: updated.meals ?? [],
             target_meals_count: (updated as any).targetMealsCount ?? state.targetMealsCount ?? null,
             summary: existing?.summary ?? null,
@@ -104,7 +104,6 @@ export async function POST(req: NextRequest) {
             .from("weekly_meals")
             .select("*")
             .eq("user_id", profileId)
-            .eq("week_start_date", weekStartDate)
             .order("updated_at", { ascending: false })
             .limit(1)
             .single();

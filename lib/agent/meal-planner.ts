@@ -1,6 +1,6 @@
 import { StateGraph, START, END, Annotation } from "@langchain/langgraph";
 import type { RunnableConfig } from "@langchain/core/runnables";
-import type { Meal, UserProfile, ISODateString } from "@/types";
+import type { Meal, UserProfile } from "@/types";
 import type { PlannerState } from "@/types/api";
 import { z } from "zod";
 import { ChatOpenAI } from "@langchain/openai";
@@ -13,7 +13,7 @@ import { ChatOpenAI } from "@langchain/openai";
 // LangGraph state definition (annotations) to satisfy types
 const PlannerStateDef = Annotation.Root({
     profile: Annotation<UserProfile>(),
-    targetWeekStartDate: Annotation<ISODateString>(),
+    // Removed date scoping; agent works on user's latest plan
     goals: Annotation<string[]>(),
     meals: Annotation<Meal[]>(),
     feedback: Annotation<string | undefined>(),
@@ -294,10 +294,12 @@ Restricciones: ${(profile.dietaryRestrictions || []).join(", ") || "ninguna"}
 Evitar: ${(profile.dislikedFoods || []).join(", ") || "nada"}
 
 IMPORTANTE:
-- Si la instrucción afecta solo algunas comidas específicas, usa type="modify_specific" y solo indica los cambios
-- Si requiere rehacer todo el plan, usa type="replace_all"
-- Ejemplo: "cambia pollo por pavo" → modify_specific con índices de comidas con pollo
-- Ejemplo: "planifica todo vegetariano" → replace_all`;
+- Si la instrucción afecta solo algunas comidas específicas, usa type="modify_specific" y solo indica los cambios.
+- Si requiere rehacer todo el plan, usa type="replace_all".
+- Cuando el cambio implique OTRO plato/base (p. ej., de verduras → papas o cambio de proteína/almidón), devolvé modify_specific con replaceWith e incluí la COMIDA COMPLETA (name + ingredients completos y coherentes con el nuevo plato). No devuelvas solo newName si los ingredientes deberían cambiar.
+- Asegurá consistencia: los ingredientes siempre deben reflejar el nombre del plato y evitar dejar ingredientes previos que ya no correspondan.
+- Ejemplo: "cambiá la tortilla de verduras por tortilla de papas" → modify_specific con replaceWith (nueva receta con papas).
+- Ejemplo: "planifica todo vegetariano" → replace_all.`;
 
     const result = await extract.invoke(
         [
