@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { createBrowserClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth-provider";
-import type { Meal, WeeklyMeals } from "@/types";
+import type { Meal, WeeklyMeals, ShoppingList } from "@/types";
 
 type ChatMessage = {
     role: "user" | "agent" | "system";
@@ -105,6 +105,11 @@ export default function AgentsPlaygroundPage() {
     const [weeklyMeals, setWeeklyMeals] = useState<WeeklyMeals | null>(null);
     const [planLoading, setPlanLoading] = useState<boolean>(true);
 
+    // Shopping list chat state
+    const [shoppingMessages, setShoppingMessages] = useState<ChatMessage[]>([]);
+    const [shoppingInput, setShoppingInput] = useState<string>("");
+    const [shoppingList, setShoppingList] = useState<ShoppingList | null>(null);
+
     // Hydrate from auth context
     useEffect(() => {
         if (user?.id) setAuthUserId(user.id);
@@ -172,6 +177,36 @@ export default function AgentsPlaygroundPage() {
             ]);
         }
     }, [profileId, plannerInput, weekStartDate, authUserId]);
+
+    const handleSendShopping = useCallback(async () => {
+        const text = shoppingInput.trim();
+        if (!text) return;
+        setShoppingMessages((m) => [...m, { role: "user", text, at: Date.now() }]);
+        setShoppingInput("");
+        try {
+            const userId = profileId ?? authUserId; // fallback for early testing
+            const res = await fetch("/api/shopping-list/step", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ userId, weekStartDate, query: text }),
+            });
+            const json = await res.json();
+            if (!res.ok) throw new Error(json.error || "Request failed");
+            setShoppingMessages((m) => [
+                ...m,
+                { role: "agent", text: json.message || "Lista actualizada.", at: Date.now() },
+            ]);
+            if (json.shoppingList) {
+                setShoppingList(json.shoppingList as ShoppingList);
+                if (!profileId && json.shoppingList.user_id) setProfileId(json.shoppingList.user_id as string);
+            }
+        } catch (err: any) {
+            setShoppingMessages((m) => [
+                ...m,
+                { role: "system", text: err.message || "Error", at: Date.now() },
+            ]);
+        }
+    }, [profileId, shoppingInput, weekStartDate, authUserId]);
 
     const header = useMemo(
         () => (
@@ -271,6 +306,63 @@ export default function AgentsPlaygroundPage() {
         };
     }, [profileId, authUserId, weekStartDate]);
 
+    // Subscribe to shopping_lists changes for the selected profile
+    useEffect(() => {
+        const supabase = createBrowserClient();
+        let active = true;
+
+        async function ensureProfileId(): Promise<string | null> {
+            if (profileId) return profileId;
+            if (!authUserId) return null;
+            const { data } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("auth_user_id", authUserId)
+                .maybeSingle();
+            if (data?.id && active) setProfileId(data.id as string);
+            return (data?.id as string) ?? null;
+        }
+
+        async function run() {
+            const pid = await ensureProfileId();
+            if (!pid) return;
+            const { data } = await supabase
+                .from("shopping_lists")
+                .select("*")
+                .eq("user_id", pid)
+                .order("updated_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (active && data) setShoppingList(data as unknown as ShoppingList);
+
+            const channel = supabase
+                .channel(`shopping_lists:${pid}`)
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: 'shopping_lists', filter: `user_id=eq.${pid}` },
+                    (payload) => {
+                        const row = (payload.new ?? payload.old) as any;
+                        if (!row) return;
+                        if (payload.new) setShoppingList(payload.new as unknown as ShoppingList);
+                    }
+                )
+                .subscribe();
+
+            return () => {
+                supabase.removeChannel(channel);
+            };
+        }
+
+        let cleanup: (() => void) | undefined;
+        run().then((fn) => {
+            cleanup = fn as any;
+        });
+        return () => {
+            active = false;
+            if (cleanup) cleanup();
+        };
+    }, [profileId, authUserId]);
+
     function WeeklyMealsView({ plan }: { plan: WeeklyMeals }) {
         const meals = (plan.meals ?? []) as Meal[];
         const target = plan.targetMealsCount ?? meals.length;
@@ -300,32 +392,88 @@ export default function AgentsPlaygroundPage() {
         );
     }
 
+    function ShoppingListView({ list }: { list: ShoppingList }) {
+        const items = list.items ?? [];
+        return (
+            <Card className="mt-4 p-4">
+                <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-lg font-semibold">Lista de compras</h3>
+                    <span className="text-sm text-muted-foreground">{items.length} items</span>
+                </div>
+                {items.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">Sin items aún.</p>
+                ) : (
+                    <ul className="space-y-2 text-sm">
+                        {items.map((it, i) => (
+                            <li key={it.id ?? i} className="flex items-start justify-between rounded border p-2">
+                                <div>
+                                    <div className="font-medium">{it.name}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                        {it.quantity} {it.unit}{it.category ? ` · ${it.category}` : ''}
+                                    </div>
+                                </div>
+                                <span className="text-xs text-muted-foreground">{it.checked ? 'ok' : ''}</span>
+                            </li>
+                        ))}
+                    </ul>
+                )}
+            </Card>
+        );
+    }
+
     return (
         <div className="mx-auto w-full max-w-6xl p-4">
             {header}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <ChatWindow
-                    title="Onboarding Agent"
-                    description={onboardingCompleted ? "Perfil completo" : "Completar perfil"}
-                    messages={onboardingMessages}
-                    input={onboardingInput}
-                    onInputChange={setOnboardingInput}
-                    onSend={handleSendOnboarding}
-                />
-                <ChatWindow
-                    title="Meal Planner"
-                    description="Itera el plan semanal (10 comidas)."
-                    messages={plannerMessages}
-                    input={plannerInput}
-                    onInputChange={setPlannerInput}
-                    onSend={handleSendPlanner}
-                />
-                <div className="md:col-span-2">
+            <div className="space-y-6">
+                {/* Row 1: Onboarding agent (chat left, entity right - empty state) */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <ChatWindow
+                        title="Onboarding Agent"
+                        description={onboardingCompleted ? "Perfil completo" : "Completar perfil"}
+                        messages={onboardingMessages}
+                        input={onboardingInput}
+                        onInputChange={setOnboardingInput}
+                        onSend={handleSendOnboarding}
+                    />
+                    <Card className="flex items-center justify-center p-4 text-sm text-muted-foreground">
+                        Estado en vivo del perfil (próximamente)
+                    </Card>
+                </div>
+
+                {/* Row 2: Planner agent (chat left, plan view right) */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <ChatWindow
+                        title="Meal Planner"
+                        description="Itera el plan semanal (10 comidas)."
+                        messages={plannerMessages}
+                        input={plannerInput}
+                        onInputChange={setPlannerInput}
+                        onSend={handleSendPlanner}
+                    />
                     {weeklyMeals ? (
                         <WeeklyMealsView plan={weeklyMeals} />
                     ) : (
                         <Card className="mt-4 p-4 text-sm text-muted-foreground">
                             {planLoading ? "Conectando al plan semanal..." : "Aún no hay plan para esta semana."}
+                        </Card>
+                    )}
+                </div>
+
+                {/* Row 3: Shopping list agent (chat left, list view right) */}
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <ChatWindow
+                        title="Shopping List"
+                        description="Crea y ajusta la lista de compras."
+                        messages={shoppingMessages}
+                        input={shoppingInput}
+                        onInputChange={setShoppingInput}
+                        onSend={handleSendShopping}
+                    />
+                    {shoppingList ? (
+                        <ShoppingListView list={shoppingList} />
+                    ) : (
+                        <Card className="mt-4 p-4 text-sm text-muted-foreground">
+                            La lista aparecerá aquí.
                         </Card>
                     )}
                 </div>
