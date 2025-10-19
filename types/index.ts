@@ -173,6 +173,7 @@ export const AgentOnboardingInputSchema = z.object({
     favoriteFoods: z.array(z.string()).default([]),
     dislikedFoods: z.array(z.string()).default([]),
     goals: z.array(z.string()).default([]),
+    explanationOfChanges: z.string().describe("A clear explanation in the user's language of what information was extracted, what was updated, what was omitted and why. Be specific and conversational."),
 });
 
 export type AgentOnboardingInputParsed = z.infer<typeof AgentOnboardingInputSchema>;

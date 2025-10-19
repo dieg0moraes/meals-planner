@@ -31,6 +31,69 @@ function isProfileComplete(p: UserProfile): boolean {
     );
 }
 
+const COMMON_EXTRACTION_RULES = `
+IMPORTANT CONTEXT:
+- The person speaking is ALWAYS the user themselves
+- When the user says "I live alone", "it's just me", "solo yo", etc., add ONE person to the household (the user)
+- The user is always part of the household - include them in the people array with role "self" or "user"
+- When counting household members, the user counts as one person
+- If the user says "I live with my brother", that's TWO people total: the user + brother
+- If the user says "we are 3 in the house", that includes the user, so add 3 people total
+
+STRICT RULES - ONLY add information when COMPLETELY CLEAR:
+- If it's ambiguous whether someone is a person or pet (e.g., "Brunito", "Luna"), DO NOT add them at all
+- Only add pets when explicitly stated (e.g., "my dog", "mi gato", "my cat Brunito")
+- Only add people when the relationship is clear (e.g., "my brother", "mi novia", "my wife")
+- If you're not 100% sure about any field value, OMIT it completely
+- Better to collect less information than to collect wrong information
+- Do NOT guess or infer - only extract what is explicitly stated
+
+IMPORTANT - explanationOfChanges field:
+You MUST provide a clear, conversational explanation in the "explanationOfChanges" field that describes:
+- What information was successfully extracted and added/updated
+- What information was omitted and WHY (ambiguous, unclear, not enough context)
+- Any contradictions found and how they were resolved
+- Use the SAME LANGUAGE as the user's input (if they speak Spanish, respond in Spanish)
+- Be specific with examples (e.g., "Omití 'Brunito' porque no está claro si es una persona o mascota")
+- Keep it concise but informative (2-4 sentences max)
+`;
+
+const INITIAL_EXTRACTION_EXAMPLES = `
+Examples of CORRECT extraction:
+- "I live alone" → 1 person with role "self"
+- "I live with my girlfriend" → 2 people: role "self" + role "girlfriend"
+- "We are 4: me, my wife and two kids" → 4 people total
+- "Just me and my dog" → 1 person (role "self") + 1 pet (animal "dog")
+- "I have a dog named Bruno" → 1 pet (animal "dog", name "Bruno")
+
+Examples of cases to OMIT (ambiguous):
+- "I live with Brunito" → OMIT Brunito (unclear if person or pet)
+- "Luna is with me" → OMIT Luna (unclear if person or pet)
+- "I like pasta" → Add to favoriteFoods ONLY if context is about food preferences
+`;
+
+function buildSystemPrompt(existingData: any | null): string {
+    if (existingData) {
+        return `You are updating user onboarding details for a weekly meal planner.
+Current user data: ${JSON.stringify(existingData, null, 2)}
+
+${COMMON_EXTRACTION_RULES}
+
+Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new).
+If new info contradicts existing data, prefer the new information.
+If new info adds to existing data (e.g., new favorite foods), merge both. THIS IS CRITICAL, DONT LOSE ANY INFORMATION.
+Always return ALL fields, not just the updated ones.`;
+    }
+
+    return `You extract user onboarding details for a weekly meal planner.
+
+${COMMON_EXTRACTION_RULES}
+
+${INITIAL_EXTRACTION_EXAMPLES}
+
+Return only the structured fields. If unsure, omit.`;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { authUserId, new_info } = (await req.json()) as {
@@ -108,15 +171,7 @@ export async function POST(req: NextRequest) {
             goals: prev.goals,
         } : null;
 
-        const systemPrompt = existingData
-            ? `You are updating user onboarding details for a weekly meal planner.
-Current user data: ${JSON.stringify(existingData, null, 2)}
-
-Incorporate the new information provided by the user and return the COMPLETE updated profile with all fields (existing + new).
-If new info contradicts existing data, prefer the new information.
-If new info adds to existing data (e.g., new favorite foods), merge both.
-Always return ALL fields, not just the updated ones.`
-            : "You extract user onboarding details for a weekly meal planner. Return only the structured fields. If unsure, omit.";
+        const systemPrompt = buildSystemPrompt(existingData);
 
         // Invoke with LangSmith tracing metadata
         const parsed = await extractor.invoke(
@@ -202,7 +257,11 @@ Always return ALL fields, not just the updated ones.`
         const profile = (saved as any) as UserProfile;
         const completed = isProfileComplete(merged);
 
-        return NextResponse.json({ profile: merged, completed });
+        return NextResponse.json({
+            profile: merged,
+            completed,
+            explanation: parsed.explanationOfChanges
+        });
     } catch (err) {
         return NextResponse.json(
             { error: (err as Error).message ?? "Onboarding ingest failed" },
