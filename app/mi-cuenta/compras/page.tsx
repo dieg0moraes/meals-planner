@@ -11,9 +11,10 @@ import type { ShoppingCart, SearchResponse, OptimizeResponse, OptimizeError } fr
 import { ShoppingCart as ShoppingCartIcon, Loader2, RefreshCw } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import { useApplication } from "@/components/application-provider"
+import { createBrowserClient } from "@/lib/supabase/client"
 
 export default function MiListaComprasPage() {
-  const { shoppingList, weeklyMeals } = useEntities()
+  const { shoppingList, weeklyMeals, profile } = useEntities()
   const items = (shoppingList?.items ?? []) as ShoppingListItem[]
   const listFlash = useFlashOnChange(JSON.stringify(items.map(it => ({ id: it.id, name: it.name, q: it.quantity, u: it.unit }))))
   const [checked, setChecked] = useState<Record<string, boolean>>({})
@@ -86,6 +87,27 @@ export default function MiListaComprasPage() {
 
   const kickoffDoneRef = useRef(false)
   const { setLoading } = useApplication()
+  const [saving, setSaving] = useState<string | null>(null)
+
+  const handleToggleChecked = async (itemId: string) => {
+    if (!shoppingList?.id || !profile?.id) return
+    const supabase = createBrowserClient()
+    const newItems: ShoppingListItem[] = items.map((it) =>
+      it.id === itemId ? { ...it, checked: !it.checked } : it
+    )
+    // Optimistic UI: mark as saving to disable checkbox
+    setSaving(itemId)
+    try {
+      const { error } = await supabase
+        .from("shopping_lists")
+        .update({ items: newItems as any })
+        .eq("id", shoppingList.id)
+        .eq("user_id", profile.id)
+      if (error) throw error
+    } finally {
+      setSaving(null)
+    }
+  }
 
   useEffect(() => {
     if (kickoffDoneRef.current) return
@@ -160,14 +182,15 @@ export default function MiListaComprasPage() {
         <div className={`space-y-3 transition-all ${listFlash ? 'animate-slide-up' : ''}`}> 
           {items.map((it, i) => {
             const key = it.id || `${it.name}-${i}`
-            const isChecked = !!checked[key]
+            const isChecked = !!it.checked
             return (
               <Card key={key} className="p-4">
                 <div className="flex items-start gap-3">
                   <Checkbox
                     id={key}
                     checked={isChecked}
-                    onCheckedChange={() => setChecked((c) => ({ ...c, [key]: !c[key] }))}
+                    onCheckedChange={() => it.id && handleToggleChecked(it.id)}
+                    disabled={saving === it.id}
                     className="mt-0.5"
                   />
                   <label htmlFor={key} className="flex-1 cursor-pointer select-none">

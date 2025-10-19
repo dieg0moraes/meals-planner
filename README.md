@@ -22,9 +22,16 @@ Tecnologías
 
 Rutas clave
 - `/login`: Sign‑in con Google
-- `/agents`: Playground con 3 filas (Onboarding, Planificador y Lista de compras)
-- API: `/api/onboarding/ingest`, `/api/planner/step`
-  - Nuevo: `/api/shopping-list/step` (crea/ajusta la lista de compras, usa el último `weekly_meals` del usuario)
+- Landing pública en `/` (redirige a `/mi-cuenta/dashboard` si hay sesión)
+- App privada bajo `/mi-cuenta/*` (sidebar + chat flotante, minimizable)
+  - `/mi-cuenta/dashboard`
+  - `/mi-cuenta/comidas`
+  - `/mi-cuenta/compras`
+- Playground: `/agents` (dev/testing)
+- API:
+  - Onboarding: `/api/onboarding/ingest`
+  - Planner: `/api/planner/step` y nuevo `/api/planner/kickoff` (genera primera versión)
+  - Shopping: `/api/shopping-list/step` y nuevo `/api/shopping-list/kickoff` (genera primera versión)
 
 Env necesarios (.env.local)
 - `NEXT_PUBLIC_SUPABASE_URL`
@@ -41,6 +48,7 @@ Estado actual
   - Genera el plan inicial con Structured Outputs (lista completa de comidas con ingredientes opcionales/marcados)
   - Re‑escribe la lista completa ante instrucciones del usuario (p. ej. “cambiá la 3 por algo con pollo”)
   - Persiste en `weekly_meals` (`meals`, `target_meals_count`, `summary`)
+  - Simplificación: ya no usamos `weekStartDate`. El planner opera siempre sobre el ÚLTIMO `weekly_meals` del usuario
 - UI `/agents`:
   - Tres filas (por agente), cada una con chat a la izquierda y estado a la derecha
   - Chats: Onboarding, Planificador y Lista de compras (nuevo)
@@ -51,6 +59,11 @@ Shopping List Agent (simple, sin LangChain)
 - Lógica: si no existe lista o está vacía → genera lista inicial; si existe → aplica instrucción del usuario y devuelve lista completa actualizada
 - Persiste en `shopping_lists` con vínculo a `week_meals_id` (último plan del usuario)
 - Respuestas siempre en JSON validado con Zod; logs de diagnóstico activados (petición a OpenAI, validación/parseo, upsert)
+
+Flujo automático por secciones (client-side)
+- En `/mi-cuenta/comidas`: si la lista de comidas está vacía al entrar y no se disparó antes → POST `/api/planner/kickoff` (target por defecto 10)
+- En `/mi-cuenta/compras`: si hay comidas y la lista está vacía → POST `/api/shopping-list/kickoff`
+- Loader global (`ApplicationContext`) muestra overlay durante cada kickoff
 
 Objetivo demo
 - Llegar a la lista de compras final desde una conversación breve: crear perfil → definir 10 comidas → generar lista.
