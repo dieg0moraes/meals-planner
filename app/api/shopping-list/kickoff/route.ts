@@ -11,14 +11,32 @@ export async function POST(_req: NextRequest) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
-    // Profile by auth user
+    // Profile by auth user - map fields correctly
     const { data: profileRow, error: pErr } = await supabase
       .from("profiles")
       .select("*")
       .eq("auth_user_id", auth.user.id)
       .maybeSingle();
     if (pErr || !profileRow) throw new Error(pErr?.message || "Profile not found");
-    const profile = profileRow as unknown as UserProfile;
+
+    // Map snake_case DB fields to camelCase TypeScript fields
+    const p = profileRow as any;
+    const profile: UserProfile = {
+      id: p.id,
+      authUserId: p.auth_user_id,
+      displayName: p.display_name || "",
+      locale: p.locale || undefined,
+      timeZone: p.time_zone || undefined,
+      location: p.location || undefined,
+      household: p.household || { people: [], pets: [] },
+      dietaryRestrictions: p.dietary_restrictions || [],
+      favoriteFoods: p.favorite_foods || [],
+      dislikedFoods: p.disliked_foods || [],
+      goals: p.goals || [],
+      createdAt: p.created_at,
+      updatedAt: p.updated_at,
+      rawOnboarding: p.raw_onboarding || undefined,
+    };
 
     // Latest weekly meals (if any)
     const { data: weeklyRow } = await supabase

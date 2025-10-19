@@ -11,6 +11,7 @@ import { useEffect, useState, memo } from "react"
 import Script from "next/script"
 import type { UserProfile } from "@/types"
 import { createBrowserClient } from "@/lib/supabase/client"
+import { useEntities } from "@/components/entities-provider"
 import {
   User,
   Users,
@@ -57,9 +58,8 @@ const ElevenLabsWidget = memo(({ authUserId }: { authUserId: string | null }) =>
 ElevenLabsWidget.displayName = 'ElevenLabsWidget'
 
 export default function DashboardPage() {
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const { profile: userProfile, loading: entitiesLoading } = useEntities()
   const [authUserId, setAuthUserId] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
   const [isOnboardingComplete, setIsOnboardingComplete] = useState(false)
   const [showResetConfirm, setShowResetConfirm] = useState(false)
   const [isResetting, setIsResetting] = useState(false)
@@ -153,110 +153,8 @@ export default function DashboardPage() {
     }
   }, [userProfile])
 
-  // Subscribe to profiles table changes in Supabase
-  useEffect(() => {
-    const supabase = createBrowserClient()
-    let active = true
-
-    async function run() {
-      const pid = authUserId;
-      console.log("pid", pid)
-      if (!pid) {
-        // If no profile found, stop loading
-        setIsLoading(false)
-        return
-      }
-
-      // Fetch initial profile data
-      const { data } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("auth_user_id", pid)
-        .maybeSingle()
-
-      if (active && data) {
-        const profile = {
-          id: data.id,
-          authUserId: data.auth_user_id,
-          displayName: data.display_name || "",
-          locale: data.locale || undefined,
-          timeZone: data.time_zone || undefined,
-          location: data.location || undefined,
-          household: data.household || { people: [], pets: [] },
-          dietaryRestrictions: data.dietary_restrictions || [],
-          favoriteFoods: data.favorite_foods || [],
-          dislikedFoods: data.disliked_foods || [],
-          goals: data.goals || [],
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          rawOnboarding: data.raw_onboarding || undefined,
-        }
-
-        setUserProfile(profile)
-        setIsLoading(false)
-
-        // Check if onboarding is complete
-        const isComplete = checkOnboardingComplete(profile)
-        setIsOnboardingComplete(isComplete)
-      }
-
-      // Subscribe to real-time updates (always, not just when onboarding is incomplete)
-      const channel = supabase
-        .channel(`profiles:${pid}`)
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'profiles', filter: `auth_user_id=eq.${pid}` },
-          (payload) => {
-            console.log("Real-time update received:", payload)
-            if (!payload.new) return
-            const data = payload.new as any
-
-            if (active) {
-              const updatedProfile = {
-                id: data.id,
-                authUserId: data.auth_user_id,
-                displayName: data.display_name || "",
-                locale: data.locale || undefined,
-                timeZone: data.time_zone || undefined,
-                location: data.location || undefined,
-                household: data.household || { people: [], pets: [] },
-                dietaryRestrictions: data.dietary_restrictions || [],
-                favoriteFoods: data.favorite_foods || [],
-                dislikedFoods: data.disliked_foods || [],
-                goals: data.goals || [],
-                createdAt: data.created_at,
-                updatedAt: data.updated_at,
-                rawOnboarding: data.raw_onboarding || undefined,
-              }
-
-              setUserProfile(updatedProfile)
-
-              // Check if onboarding status changed
-              const isComplete = checkOnboardingComplete(updatedProfile)
-              setIsOnboardingComplete(isComplete)
-            }
-          }
-        )
-        .subscribe()
-
-      return () => {
-        supabase.removeChannel(channel)
-      }
-    }
-
-    let cleanup: (() => void) | undefined
-    run().then((fn) => {
-      cleanup = fn
-    })
-
-    return () => {
-      active = false
-      if (cleanup) cleanup()
-    }
-  }, [authUserId])
-
   // Loading state
-  if (isLoading) {
+  if (entitiesLoading) {
     return (
       <div className="flex flex-col h-full bg-gradient-to-br from-background via-background to-primary/5">
         <div className="flex-1 p-8 md:p-12 overflow-auto">

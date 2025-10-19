@@ -263,13 +263,39 @@ async function generateMealsFromProfile(profile: UserProfile, count: number): Pr
     });
 
     const householdSize = (profile.household?.people?.length ?? 0) + (profile.household?.pets?.length ?? 0);
+
+    // Build detailed profile context - filter out "ninguna" from restrictions
+    const restrictionsList = (profile.dietaryRestrictions || [])
+        .filter(r => r.toLowerCase() !== 'ninguna');
+    const restrictions = restrictionsList.length > 0
+        ? restrictionsList.join(", ")
+        : "ninguna";
+
+    const dislikedList = (profile.dislikedFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const disliked = dislikedList.length > 0
+        ? dislikedList.join(", ")
+        : "ninguna";
+
+    const favoritesList = (profile.favoriteFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const favorites = favoritesList.length > 0
+        ? favoritesList.join(", ")
+        : "ninguna especificada";
+
+    const goalsList = (profile.goals || [])
+        .filter(g => g.toLowerCase() !== 'ninguna' && g.toLowerCase() !== 'ninguno');
+    const goals = goalsList.length > 0
+        ? goalsList.join(", ")
+        : "sin objetivos específicos";
+
     const sys = `Sos un planificador de comidas para una familia en LATAM.
 Reglas:
 - Devuelve exactamente ${count} comidas.
 - Simple, accesible y variadas.
-- Respeta restricciones: ${JSON.stringify(profile.dietaryRestrictions || [])}.
-- Evita: ${JSON.stringify(profile.dislikedFoods || [])}.
-- Considera favoritos: ${JSON.stringify(profile.favoriteFoods || [])}.
+- Respeta restricciones dietéticas del hogar.
+- Evita completamente los alimentos que no les gustan.
+- Prioriza comidas favoritas cuando sea posible.
 - Cada ingrediente debe marcar isOptional=false salvo salsas/toppings/especias que pueden ser true.`;
 
     const mealsObj = await extract.invoke(
@@ -277,7 +303,14 @@ Reglas:
             { role: "system", content: sys },
             {
                 role: "user",
-                content: `Hogar: ${householdSize} integrantes. Objetivos: ${JSON.stringify(profile.goals || [])}. Genera la lista.`,
+                content: `Perfil del hogar:
+- Integrantes: ${householdSize} personas
+- Restricciones dietéticas: ${restrictions}
+- Alimentos que NO les gustan (evitar): ${disliked}
+- Comidas favoritas (priorizar): ${favorites}
+- Objetivos: ${goals}
+
+Genera ${count} comidas variadas, balanceadas y adaptadas a este perfil.`,
             },
         ] as any,
         {
@@ -328,15 +361,38 @@ async function rewriteMealsFromInstruction(
 
     const mealsList = currentMeals.map((m, i) => `${i}. ${m.name}`).join("\n");
 
+    // Build detailed profile context for rewrite - filter out "ninguna"
+    const restrictionsList = (profile.dietaryRestrictions || [])
+        .filter(r => r.toLowerCase() !== 'ninguna');
+    const restrictions = restrictionsList.length > 0
+        ? restrictionsList.join(", ")
+        : "ninguna";
+
+    const dislikedList = (profile.dislikedFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const disliked = dislikedList.length > 0
+        ? dislikedList.join(", ")
+        : "nada";
+
+    const favoritesList = (profile.favoriteFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const favorites = favoritesList.length > 0
+        ? favoritesList.join(", ")
+        : "ninguna especificada";
+
     const sys = `Eres un asistente que actualiza planes de comidas de forma EFICIENTE.
-Restricciones: ${(profile.dietaryRestrictions || []).join(", ") || "ninguna"}
-Evitar: ${(profile.dislikedFoods || []).join(", ") || "nada"}
+
+Perfil del hogar:
+- Restricciones dietéticas: ${restrictions}
+- Alimentos que NO les gustan (evitar): ${disliked}
+- Comidas favoritas (priorizar): ${favorites}
 
 IMPORTANTE:
 - Si la instrucción afecta solo algunas comidas específicas, usa type="modify_specific" y solo indica los cambios.
 - Si requiere rehacer todo el plan, usa type="replace_all".
 - Cuando el cambio implique OTRO plato/base (p. ej., de verduras → papas o cambio de proteína/almidón), devolvé modify_specific con replaceWith e incluí la COMIDA COMPLETA (name + ingredients completos y coherentes con el nuevo plato). No devuelvas solo newName si los ingredientes deberían cambiar.
 - Asegurá consistencia: los ingredientes siempre deben reflejar el nombre del plato y evitar dejar ingredientes previos que ya no correspondan.
+- Respeta siempre las restricciones dietéticas y evita los alimentos que no les gustan.
 - Ejemplo: "cambiá la tortilla de verduras por tortilla de papas" → modify_specific con replaceWith (nueva receta con papas).
 - Ejemplo: "planifica todo vegetariano" → replace_all.`;
 
@@ -345,7 +401,7 @@ IMPORTANTE:
             { role: "system", content: sys },
             {
                 role: "user",
-                content: `Lista actual:\n${mealsList}\n\nInstrucción: ${instruction}`,
+                content: `Lista actual:\n${mealsList}\n\nInstrucción del usuario: ${instruction}`,
             },
         ] as any,
         {

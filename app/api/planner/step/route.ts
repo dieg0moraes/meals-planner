@@ -26,14 +26,52 @@ export async function POST(req: NextRequest) {
                 .select("*")
                 .eq("id", userId)
                 .maybeSingle();
-            if (data) profile = (data as unknown) as UserProfile;
+            if (data) {
+                // Map snake_case DB fields to camelCase TypeScript fields
+                const p = data as any;
+                profile = {
+                    id: p.id,
+                    authUserId: p.auth_user_id,
+                    displayName: p.display_name || "",
+                    locale: p.locale || undefined,
+                    timeZone: p.time_zone || undefined,
+                    location: p.location || undefined,
+                    household: p.household || { people: [], pets: [] },
+                    dietaryRestrictions: p.dietary_restrictions || [],
+                    favoriteFoods: p.favorite_foods || [],
+                    dislikedFoods: p.disliked_foods || [],
+                    goals: p.goals || [],
+                    createdAt: p.created_at,
+                    updatedAt: p.updated_at,
+                    rawOnboarding: p.raw_onboarding || undefined,
+                };
+            }
             if (!profile) {
                 const { data: byAuth, error: errAuth } = await supabase
                     .from("profiles")
                     .select("*")
                     .eq("auth_user_id", userId)
                     .maybeSingle();
-                if (byAuth) profile = (byAuth as unknown) as UserProfile;
+                if (byAuth) {
+                    // Map snake_case DB fields to camelCase TypeScript fields
+                    const p = byAuth as any;
+                    profile = {
+                        id: p.id,
+                        authUserId: p.auth_user_id,
+                        displayName: p.display_name || "",
+                        locale: p.locale || undefined,
+                        timeZone: p.time_zone || undefined,
+                        location: p.location || undefined,
+                        household: p.household || { people: [], pets: [] },
+                        dietaryRestrictions: p.dietary_restrictions || [],
+                        favoriteFoods: p.favorite_foods || [],
+                        dislikedFoods: p.disliked_foods || [],
+                        goals: p.goals || [],
+                        createdAt: p.created_at,
+                        updatedAt: p.updated_at,
+                        rawOnboarding: p.raw_onboarding || undefined,
+                    };
+                }
                 if (!profile) {
                     console.error("[planner] load profile error:", error || errAuth);
                     throw new Error("Profile not found");

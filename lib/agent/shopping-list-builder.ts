@@ -109,10 +109,46 @@ export interface ShoppingListStepOutput {
 }
 
 async function generateInitialItems(profile: UserProfile, weeklyMeals?: WeeklyMeals | null): Promise<ShoppingListStepOutput> {
+    // Build detailed profile context - filter out "ninguna"
+    const householdSize = (profile.household?.people?.length ?? 0) + (profile.household?.pets?.length ?? 0);
+
+    const restrictionsList = (profile.dietaryRestrictions || [])
+        .filter(r => r.toLowerCase() !== 'ninguna');
+    const restrictions = restrictionsList.length > 0
+        ? restrictionsList.join(", ")
+        : "ninguna";
+
+    const dislikedList = (profile.dislikedFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const disliked = dislikedList.length > 0
+        ? dislikedList.join(", ")
+        : "nada";
+
+    const favoritesList = (profile.favoriteFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const favorites = favoritesList.length > 0
+        ? favoritesList.join(", ")
+        : "ninguna especificada";
+
+    const goalsList = (profile.goals || [])
+        .filter(g => g.toLowerCase() !== 'ninguna' && g.toLowerCase() !== 'ninguno');
+    const goals = goalsList.length > 0
+        ? goalsList.join(", ")
+        : "sin objetivos específicos";
+
     const system = "Sos un asistente que crea listas de compras simples y claras para LATAM. Siempre respondé SOLO en JSON válido.";
     const baseUser = `Genera una lista inicial de compras para la semana.
-Perfil: ${serializeProfileSummary(profile)}
-Plan semanal (puede ser null): ${serializeWeeklyMealsSummary(weeklyMeals)}
+
+Perfil del hogar:
+- Integrantes: ${householdSize} personas
+- Restricciones dietéticas: ${restrictions}
+- Alimentos que NO les gustan (evitar): ${disliked}
+- Comidas favoritas: ${favorites}
+- Objetivos: ${goals}
+- Ubicación: ${profile.location ?? "no especificada"}
+
+Plan semanal: ${serializeWeeklyMealsSummary(weeklyMeals)}
+
 Reglas:
 - Devuelve un objeto JSON con campos {\"message\": string, \"items\": ShoppingListItem[]}
 - Cada item: { name, quantity, unit, category?, checked=false, notes? }
@@ -122,7 +158,8 @@ Reglas:
 - Redondeá a tamaños razonables de supermercado (ej.: 500 g, 1 kg, 1 l, 6/12 unidades) y si la suma es chica, elevá al paquete mínimo.
 - Podés usar notes para aclarar variedad o formato (ej.: \"arroz largo fino\", \"lata\").
 - Usá category cuando aplique (verduras, frutas, carnes, lácteos, granos, congelados, despensa, limpieza, otros).
-- Considerá restricciones y objetivos, mantené la lista breve y útil.`;
+- Respeta las restricciones dietéticas y evita los alimentos que no les gustan.
+- Considerá los objetivos del hogar, mantené la lista breve y útil.`;
 
     // Single retry with a stricter hint to avoid empty lists
     const attempts = [
@@ -167,16 +204,46 @@ async function refineItems(
         return { items: currentItems, message: "Sin cambios." };
     }
 
+    // Build detailed profile context - filter out "ninguna"
+    const householdSize = (profile.household?.people?.length ?? 0) + (profile.household?.pets?.length ?? 0);
+
+    const restrictionsList = (profile.dietaryRestrictions || [])
+        .filter(r => r.toLowerCase() !== 'ninguna');
+    const restrictions = restrictionsList.length > 0
+        ? restrictionsList.join(", ")
+        : "ninguna";
+
+    const dislikedList = (profile.dislikedFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const disliked = dislikedList.length > 0
+        ? dislikedList.join(", ")
+        : "nada";
+
+    const favoritesList = (profile.favoriteFoods || [])
+        .filter(f => f.toLowerCase() !== 'ninguna' && f.toLowerCase() !== 'ninguno');
+    const favorites = favoritesList.length > 0
+        ? favoritesList.join(", ")
+        : "ninguna especificada";
+
     const system = "Sos un asistente que actualiza listas de compras. Siempre devolvés SOLO JSON válido.";
-    const user = `Te doy una lista actual y una instrucción del usuario. 
-Perfil: ${serializeProfileSummary(profile)}
-Plan semanal (puede ser null): ${serializeWeeklyMealsSummary(weeklyMeals)}
+    const user = `Te doy una lista actual y una instrucción del usuario.
+
+Perfil del hogar:
+- Integrantes: ${householdSize} personas
+- Restricciones dietéticas: ${restrictions}
+- Alimentos que NO les gustan (evitar): ${disliked}
+- Comidas favoritas: ${favorites}
+
+Plan semanal: ${serializeWeeklyMealsSummary(weeklyMeals)}
 Lista actual: ${JSON.stringify(currentItems.map(({ id, ...rest }) => rest))}
-Instrucción: ${instruction}
+Instrucción del usuario: ${instruction}
+
 Tarea: Decidí si se requiere cambio. Devolvé SIEMPRE la lista COMPLETA actualizada (aplicando la instrucción si corresponde) y un mensaje corto al usuario.
+
 Reglas:
 - No copies cantidades de receta. Convertí unidades de cocina a unidades de COMPRA (g, kg, ml, l, unit, pack) y redondeá a tamaños razonables de supermercado.
 - Unificá por nombre y unidad, elevando al paquete mínimo si corresponde.
+- Respeta las restricciones dietéticas y evita los alimentos que no les gustan.
 Formato JSON: {\"message\": string, \"items\": ShoppingListItem[]}`;
 
     const content = await callOpenAI(system, user);

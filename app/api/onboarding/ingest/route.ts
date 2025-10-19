@@ -44,6 +44,7 @@ DIFERENCIA CRÍTICA - dietaryRestrictions vs goals:
 • dietaryRestrictions = DIETAS, ALERGIAS, RESTRICCIONES ALIMENTARIAS
   Ejemplos: "vegetariano", "vegano", "sin gluten", "sin lactosa", "antiinflamatorio", "kosher", "halal", "sin azúcar"
   ⚠️ Si el usuario dice que NO tiene restricciones → usar ["ninguna"]
+  No pongas descripciones poco claras "pollo" pone "alergia al pollo"
   
 • goals = OBJETIVOS del planificador (NO son dietas)
   Ejemplos: "bajar de peso", "ahorrar dinero", "comer más saludable", "más variedad", "ahorrar tiempo"

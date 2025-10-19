@@ -44,7 +44,24 @@ export function useUserProfile(): UseUserProfileReturn {
       }
 
       if (data) {
-        const userProfile = data as any as UserProfile
+        // Map snake_case DB fields to camelCase TypeScript fields
+        const p = data as any;
+        const userProfile: UserProfile = {
+          id: p.id,
+          authUserId: p.auth_user_id,
+          displayName: p.display_name || "",
+          locale: p.locale || undefined,
+          timeZone: p.time_zone || undefined,
+          location: p.location || undefined,
+          household: p.household || { people: [], pets: [] },
+          dietaryRestrictions: p.dietary_restrictions || [],
+          favoriteFoods: p.favorite_foods || [],
+          dislikedFoods: p.disliked_foods || [],
+          goals: p.goals || [],
+          createdAt: p.created_at,
+          updatedAt: p.updated_at,
+          rawOnboarding: p.raw_onboarding || undefined,
+        };
         setProfile(userProfile)
 
         // Check if profile is complete

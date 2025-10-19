@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
         const authUserId = auth.user.id;
         const { targetMealsCount } = (await req.json().catch(() => ({}))) as { targetMealsCount?: number };
 
-        // Load profile by auth_user_id
+        // Load profile by auth_user_id and map fields correctly
         let profile: UserProfile | null = null;
         {
             const { data: byAuth } = await supabase
@@ -24,7 +24,26 @@ export async function POST(req: NextRequest) {
                 .select("*")
                 .eq("auth_user_id", authUserId)
                 .maybeSingle();
-            if (byAuth) profile = (byAuth as unknown) as UserProfile;
+            if (byAuth) {
+                // Map snake_case DB fields to camelCase TypeScript fields
+                const p = byAuth as any;
+                profile = {
+                    id: p.id,
+                    authUserId: p.auth_user_id,
+                    displayName: p.display_name || "",
+                    locale: p.locale || undefined,
+                    timeZone: p.time_zone || undefined,
+                    location: p.location || undefined,
+                    household: p.household || { people: [], pets: [] },
+                    dietaryRestrictions: p.dietary_restrictions || [],
+                    favoriteFoods: p.favorite_foods || [],
+                    dislikedFoods: p.disliked_foods || [],
+                    goals: p.goals || [],
+                    createdAt: p.created_at,
+                    updatedAt: p.updated_at,
+                    rawOnboarding: p.raw_onboarding || undefined,
+                };
+            }
             if (!profile) throw new Error("Profile not found");
         }
         const profileId = profile.id;
