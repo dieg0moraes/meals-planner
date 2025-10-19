@@ -214,6 +214,7 @@ IMPORTANTE:
 
   } catch (error) {
     console.error('[optimize-api] Error:', error);
+
     
     return NextResponse.json(
       {
