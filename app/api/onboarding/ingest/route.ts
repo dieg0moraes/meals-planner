@@ -65,7 +65,10 @@ export async function POST(req: NextRequest) {
         const prev = (existing as any) as UserProfile | null;
 
         // 2) Extract and merge new info with existing data using LLM
-        const model = new ChatOpenAI({ model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini", temperature: 0 });
+        const model = new ChatOpenAI({
+            model: process.env.OPENAI_MODEL ?? "gpt-4.1-mini",
+            temperature: 0
+        });
         const extractor = model.withStructuredOutput(AgentOnboardingInputSchema);
 
         // Prepare context with existing data
@@ -88,13 +91,25 @@ If new info adds to existing data (e.g., new favorite foods), merge both.
 Always return ALL fields, not just the updated ones.`
             : "You extract user onboarding details for a weekly meal planner. Return only the structured fields. If unsure, omit.";
 
-        const parsed = await extractor.invoke([
+        // Invoke with LangSmith tracing metadata
+        const parsed = await extractor.invoke(
+            [
+                {
+                    role: "system",
+                    content: systemPrompt,
+                },
+                { role: "user", content: new_info },
+            ] as any,
             {
-                role: "system",
-                content: systemPrompt,
-            },
-            { role: "user", content: new_info },
-        ] as any);
+                metadata: {
+                    userId: resolvedAuthUserId,
+                    endpoint: "onboarding-ingest",
+                    hasExistingProfile: !!prev,
+                },
+                tags: ["onboarding", "profile-extraction"],
+                runName: "extract-onboarding-data",
+            }
+        );
 
         // 3) Build final profile from LLM output (LLM already merged everything)
         const nowIso = new Date().toISOString();

@@ -69,7 +69,11 @@ export async function POST(req: NextRequest) {
             done: false,
         };
 
+        console.log("[planner] Starting graph execution...");
+        const startTime = Date.now();
         const updated = await runPlannerStep(runnable, state);
+        const endTime = Date.now();
+        console.log(`[planner] Graph execution completed in ${endTime - startTime}ms`);
         console.log("[planner] updated state summary:", {
             meals: updated.meals?.length,
             phase: updated.phase,

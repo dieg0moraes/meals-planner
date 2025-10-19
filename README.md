@@ -22,8 +22,9 @@ Tecnologías
 
 Rutas clave
 - `/login`: Sign‑in con Google
-- `/agents`: Playground con 2 chats (Onboarding y Planificador)
-- API: `/api/onboarding/ingest` y `/api/planner/step`
+- `/agents`: Playground con 3 filas (Onboarding, Planificador y Lista de compras)
+- API: `/api/onboarding/ingest`, `/api/planner/step`
+  - Nuevo: `/api/shopping-list/step` (crea/ajusta la lista de compras, usa el último `weekly_meals` del usuario)
 
 Env necesarios (.env.local)
 - `NEXT_PUBLIC_SUPABASE_URL`
@@ -41,8 +42,15 @@ Estado actual
   - Re‑escribe la lista completa ante instrucciones del usuario (p. ej. “cambiá la 3 por algo con pollo”)
   - Persiste en `weekly_meals` (`meals`, `target_meals_count`, `summary`)
 - UI `/agents`:
-  - Dos chats (Onboarding y Planificador) y vista en vivo del plan
-  - Suscripción en tiempo real a `weekly_meals`
+  - Tres filas (por agente), cada una con chat a la izquierda y estado a la derecha
+  - Chats: Onboarding, Planificador y Lista de compras (nuevo)
+  - Vista en vivo del plan semanal y de la lista de compras
+  - Suscripción en tiempo real a `weekly_meals` y `shopping_lists`
+
+Shopping List Agent (simple, sin LangChain)
+- Lógica: si no existe lista o está vacía → genera lista inicial; si existe → aplica instrucción del usuario y devuelve lista completa actualizada
+- Persiste en `shopping_lists` con vínculo a `week_meals_id` (último plan del usuario)
+- Respuestas siempre en JSON validado con Zod; logs de diagnóstico activados (petición a OpenAI, validación/parseo, upsert)
 
 Objetivo demo
 - Llegar a la lista de compras final desde una conversación breve: crear perfil → definir 10 comidas → generar lista.
